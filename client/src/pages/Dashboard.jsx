@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, memo } from 'react';
 import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import { FolderOpen, User, Clock, CheckCircle, TrendingUp, TrendingDown, Calendar, FileText, Activity, Check } from 'lucide-react';
+import { FolderOpen, User, Clock, CheckCircle, TrendingUp, TrendingDown, Calendar, FileText, Activity, Check, AlertCircle } from 'lucide-react';
 import { useSocket } from '../contexts/SocketContext';
 import { useProjects } from '../contexts/ProjectContext';
 import { Link } from 'react-router-dom';
@@ -247,13 +247,16 @@ export default function Dashboard() {
 
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const fetchDashboardData = useCallback(async () => {
     try {
+      setError(null);
       const res = await api.get('/dashboard');
       setData(res.data);
     } catch (err) {
       console.error(err);
+      setError('Failed to load dashboard data. Please check your connection.');
     } finally {
       setLoading(false);
     }
@@ -359,6 +362,11 @@ export default function Dashboard() {
           <>
             <SkeletonCard /><SkeletonCard /><SkeletonCard /><SkeletonCard />
           </>
+        ) : error || !data || !data.trends ? (
+          <div className="col-span-4 p-6 glass-panel flex flex-col items-center justify-center text-red-400">
+            <AlertCircle size={24} className="mb-2 opacity-80" />
+            <p>{error || "Unable to load dashboard statistics."}</p>
+          </div>
         ) : (
           <>
             <StatCard icon={FolderOpen} label="Active Projects" value={data.stats.active_projects} trend={data.trends.active_projects.value} trendUp={data.trends.active_projects.trendUp} />

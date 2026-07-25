@@ -26,7 +26,7 @@ exports.getDashboardData = async (req, res) => {
         const calcTrend = (curr, prev) => {
             const diff = parseInt(curr || 0) - parseInt(prev || 0);
             return {
-                value: diff > 0 ? \`+\${diff}\` : diff.toString(),
+                value: diff > 0 ? `+${diff}` : diff.toString(),
                 trendUp: diff >= 0
             };
         };

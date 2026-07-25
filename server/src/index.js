@@ -17,7 +17,7 @@ const dashboardRoutes = require('./routes/dashboardRoutes');
 // Fail fast if critical secrets aren't configured — no silent fallback secrets.
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
     console.error('FATAL: JWT_SECRET is missing or too short (need 32+ chars). Set it in your .env file.');
-    console.error('Generate one with: node -e "console.log(require(\\'crypto\\').randomBytes(48).toString(\\'hex\\'))"');
+    console.error("Generate one with: node -e \"console.log(require('crypto').randomBytes(48).toString('hex'))\"");
     process.exit(1);
 }
 
