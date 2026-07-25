@@ -11,10 +11,18 @@ module.exports = {
             .split(',')
             .map(o => o.trim());
 
+        const isAllowedOrigin = (origin, callback) => {
+            if (!origin) return callback(null, true);
+            if (allowedOrigins.includes(origin)) return callback(null, true);
+            if (/^https:\/\/workbench-.*-yash-99bc\.vercel\.app$/.test(origin)) return callback(null, true);
+            callback(new Error('Not allowed by CORS'), false);
+        };
+
         io = socketIo(server, {
             cors: {
-                origin: allowedOrigins,
-                methods: ['GET', 'POST', 'PUT', 'DELETE']
+                origin: isAllowedOrigin,
+                methods: ['GET', 'POST', 'PUT', 'DELETE'],
+                credentials: true
             }
         });
 

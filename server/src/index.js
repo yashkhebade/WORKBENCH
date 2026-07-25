@@ -29,8 +29,18 @@ const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
     .split(',')
     .map(o => o.trim());
 
+const isAllowedOrigin = (origin, callback) => {
+    if (!origin) return callback(null, true); // Allow non-browser requests
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    // Allow any Vercel preview link for this specific project and team
+    if (/^https:\/\/workbench-.*-yash-99bc\.vercel\.app$/.test(origin)) {
+        return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+};
+
 app.use(cors({
-    origin: allowedOrigins,
+    origin: isAllowedOrigin,
     credentials: true
 }));
 app.use(express.json());
