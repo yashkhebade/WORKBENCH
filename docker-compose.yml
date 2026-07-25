@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    volumes:
+      - sqlite_data:/app/database
+      - uploads_data:/app/uploads
+    environment:
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in a root .env file — see .env.example}
+      - STORAGE_LOCATION=/app/uploads
+      - MAX_FILE_SIZE_MB=50
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+
+  frontend:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+volumes:
+  sqlite_data:
+  uploads_data:

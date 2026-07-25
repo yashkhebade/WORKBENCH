@@ -1,0 +1,559 @@
+diff --git a/.env.example b/.env.example
+new file mode 100644
+index 0000000..0ad3861
+--- /dev/null
++++ b/.env.example
+@@ -0,0 +1,7 @@
++# Copy to .env (repo root) before running `docker-compose up`. Never commit the real .env file.
++
++# Generate with: node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
++JWT_SECRET=
++
++# The origin your frontend is actually served from.
++FRONTEND_URL=http://localhost
+diff --git a/.gitignore b/.gitignore
+index f572a0f..c789e81 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -1,4 +1,10 @@
+-node_modules/
++node_modules/
+ .env
++.env.*
++!.env.example
+ server/database/
++server/database.sqlite
+ server/uploads/
++dist/
++build/
++*.log
+diff --git a/client/.env.example b/client/.env.example
+new file mode 100644
+index 0000000..907cfbd
+--- /dev/null
++++ b/client/.env.example
+@@ -0,0 +1,7 @@
++# Copy to client/.env and fill in real values. Never commit the real .env file.
++
++VITE_API_URL=http://localhost:3000/api
++
++# Only needed if you're using Supabase auth/signup.
++VITE_SUPABASE_URL=
++VITE_SUPABASE_ANON_KEY=
+diff --git a/docker-compose.yml b/docker-compose.yml
+index fde3e7a..e45516d 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -12,9 +12,10 @@ services:
+     environment:
+       - PORT=3000
+       - DB_PATH=/app/database/database.sqlite
+-      - JWT_SECRET=your_production_secret_key_change_me
++      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET must be set in a root .env file — see .env.example}
+       - STORAGE_LOCATION=/app/uploads
+       - MAX_FILE_SIZE_MB=50
++      - FRONTEND_URL=${FRONTEND_URL:-http://localhost}
+ 
+   frontend:
+     build:
+diff --git a/server/.env.example b/server/.env.example
+new file mode 100644
+index 0000000..5d73dfa
+--- /dev/null
++++ b/server/.env.example
+@@ -0,0 +1,19 @@
++# Copy to server/.env and fill in real values. Never commit the real .env file.
++
++PORT=3000
++
++# Required. Generate with:
++#   node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
++# Must be 32+ characters. The server refuses to start without this set.
++JWT_SECRET=
++
++DB_PATH=./database.sqlite
++STORAGE_LOCATION=./uploads
++MAX_FILE_SIZE_MB=50
++
++# Comma-separated list of allowed frontend origins for CORS.
++FRONTEND_URL=http://localhost:5173
++
++# Only needed if you're using Supabase auth alongside local JWT auth.
++SUPABASE_URL=
++SUPABASE_ANON_KEY=
+diff --git a/server/database.sqlite b/server/database.sqlite
+deleted file mode 100644
+index 26511fa..0000000
+Binary files a/server/database.sqlite and /dev/null differ
+diff --git a/server/package-lock.json b/server/package-lock.json
+index 02845a2..3aad555 100644
+--- a/server/package-lock.json
++++ b/server/package-lock.json
+@@ -14,6 +14,7 @@
+         "cors": "^2.8.6",
+         "dotenv": "^17.4.2",
+         "express": "^5.2.1",
++        "express-rate-limit": "^7.4.1",
+         "jsonwebtoken": "^9.0.3",
+         "multer": "^2.2.0",
+         "pg": "^8.22.0",
+@@ -746,6 +747,21 @@
+         "url": "https://opencollective.com/express"
+       }
+     },
++    "node_modules/express-rate-limit": {
++      "version": "7.5.1",
++      "resolved": "https://registry.npmjs.org/express-rate-limit/-/express-rate-limit-7.5.1.tgz",
++      "integrity": "sha512-7iN8iPMDzOMHPUYllBEsQdWVB6fPDMPqwjBaFrgr4Jgr/+okjvzAy+UHlYYL/Vs0OsOrMkwS6PJDkFlJwoxUnw==",
++      "license": "MIT",
++      "engines": {
++        "node": ">= 16"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/express-rate-limit"
++      },
++      "peerDependencies": {
++        "express": ">= 4.11"
++      }
++    },
+     "node_modules/fdir": {
+       "version": "6.5.0",
+       "resolved": "https://registry.npmjs.org/fdir/-/fdir-6.5.0.tgz",
+diff --git a/server/package.json b/server/package.json
+index 344714f..62769a5 100644
+--- a/server/package.json
++++ b/server/package.json
+@@ -16,6 +16,7 @@
+     "cors": "^2.8.6",
+     "dotenv": "^17.4.2",
+     "express": "^5.2.1",
++    "express-rate-limit": "^7.4.1",
+     "jsonwebtoken": "^9.0.3",
+     "multer": "^2.2.0",
+     "pg": "^8.22.0",
+diff --git a/server/src/controllers/AuthController.js b/server/src/controllers/AuthController.js
+index 98c0f9c..9df3e69 100644
+--- a/server/src/controllers/AuthController.js
++++ b/server/src/controllers/AuthController.js
+@@ -21,7 +21,7 @@ exports.login = async (req, res) => {
+ 
+         const token = jwt.sign(
+             { id: user.id, role: user.role },
+-            process.env.JWT_SECRET || 'fallback_secret',
++            process.env.JWT_SECRET,
+             { expiresIn: '7d' } // 1 week session
+         );
+ 
+@@ -47,11 +47,30 @@ exports.getMe = async (req, res) => {
+ 
+ exports.resetPassword = async (req, res) => {
+     try {
+-        const { targetUserId, newPassword } = req.body;
+-        
+-        // If updating someone else's password, must be admin
+-        if (targetUserId && targetUserId !== req.user.id && req.user.role !== 'Admin') {
+-            return res.status(403).json({ error: 'Only admins can reset other users passwords' });
++        const { targetUserId, newPassword, currentPassword } = req.body;
++        if (!newPassword || newPassword.length < 8) {
++            return res.status(400).json({ error: 'New password must be at least 8 characters' });
++        }
++
++        const isSelfChange = !targetUserId || targetUserId === req.user.id;
++
++        if (!isSelfChange) {
++            // Changing someone else's password requires admin rights.
++            if (req.user.role !== 'Admin') {
++                return res.status(403).json({ error: 'Only admins can reset other users passwords' });
++            }
++        } else {
++            // Self-service change requires proving you know the current password,
++            // so a briefly-stolen token can't be used to lock the real owner out.
++            if (!currentPassword) {
++                return res.status(400).json({ error: 'currentPassword is required to change your own password' });
++            }
++            const user = await User.findById(req.user.id);
++            const fullUser = await User.findByEmail(user.email); // includes password_hash
++            const isMatch = await bcrypt.compare(currentPassword, fullUser.password_hash);
++            if (!isMatch) {
++                return res.status(401).json({ error: 'Current password is incorrect' });
++            }
+         }
+ 
+         const uid = targetUserId || req.user.id;
+diff --git a/server/src/controllers/DashboardController.js b/server/src/controllers/DashboardController.js
+index 0484c1a..b50aafd 100644
+--- a/server/src/controllers/DashboardController.js
++++ b/server/src/controllers/DashboardController.js
+@@ -26,7 +26,7 @@ exports.getDashboardData = async (req, res) => {
+         const calcTrend = (curr, prev) => {
+             const diff = parseInt(curr || 0) - parseInt(prev || 0);
+             return {
+-                value: diff > 0 ? \`+\${diff}\` : diff.toString(),
++                value: diff > 0 ? `+${diff}` : diff.toString(),
+                 trendUp: diff >= 0
+             };
+         };
+diff --git a/server/src/controllers/FileController.js b/server/src/controllers/FileController.js
+index dae3de3..212f5c3 100644
+--- a/server/src/controllers/FileController.js
++++ b/server/src/controllers/FileController.js
+@@ -73,17 +73,38 @@ exports.getFileVersions = async (req, res) => {
+     }
+ };
+ 
++// Only these types are safe to render inline in the browser on our own origin.
++// Anything else (html, svg, js, etc.) could execute as script if previewed
++// inline, so it's always forced to download instead.
++const PREVIEWABLE_MIME_PREFIXES = ['image/', 'application/pdf', 'text/plain'];
++
++function guessMimeType(filename) {
++    const ext = path.extname(filename).toLowerCase();
++    const map = {
++        '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg',
++        '.gif': 'image/gif', '.webp': 'image/webp', '.pdf': 'application/pdf',
++        '.txt': 'text/plain', '.csv': 'text/plain'
++    };
++    return map[ext] || 'application/octet-stream';
++}
++
+ exports.downloadOrPreview = async (req, res) => {
+     try {
+         const version = await FileModel.findVersionById(req.params.versionId);
+         if (!version) return res.status(404).json({ error: 'Version not found' });
+ 
+         const absolutePath = path.resolve(__dirname, '../../', version.file_path);
+-        
+-        if (req.query.preview === 'true') {
+-            res.sendFile(absolutePath); // Send inline for preview
++        const mimeType = guessMimeType(version.name);
++        const isSafeToPreview = PREVIEWABLE_MIME_PREFIXES.some(p => mimeType.startsWith(p));
++
++        if (req.query.preview === 'true' && isSafeToPreview) {
++            res.setHeader('Content-Type', mimeType);
++            res.setHeader('Content-Disposition', 'inline');
++            res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox;");
++            res.setHeader('X-Content-Type-Options', 'nosniff');
++            res.sendFile(absolutePath);
+         } else {
+-            res.download(absolutePath, version.name); // Force download
++            res.download(absolutePath, version.name); // Force download for anything not on the safe list
+         }
+     } catch (err) {
+         res.status(500).json({ error: 'Internal server error' });
+diff --git a/server/src/controllers/ProjectController.js b/server/src/controllers/ProjectController.js
+index a288815..2e105f6 100644
+--- a/server/src/controllers/ProjectController.js
++++ b/server/src/controllers/ProjectController.js
+@@ -2,7 +2,9 @@ const Project = require('../models/Project');
+ 
+ exports.getAll = async (req, res) => {
+     try {
+-        const projects = await Project.findAll();
++        const projects = req.user.role === 'Admin'
++            ? await Project.findAll()
++            : await Project.findAllForUser(req.user.id);
+         res.json(projects);
+     } catch (err) {
+         res.status(500).json({ error: 'Internal server error' });
+diff --git a/server/src/index.js b/server/src/index.js
+index 18a53ee..fa20627 100644
+--- a/server/src/index.js
++++ b/server/src/index.js
+@@ -14,11 +14,25 @@ const notificationRoutes = require('./routes/notificationRoutes');
+ const noteRoutes = require('./routes/noteRoutes');
+ const dashboardRoutes = require('./routes/dashboardRoutes');
+ 
++// Fail fast if critical secrets aren't configured — no silent fallback secrets.
++if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
++    console.error('FATAL: JWT_SECRET is missing or too short (need 32+ chars). Set it in your .env file.');
++    console.error('Generate one with: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"');
++    process.exit(1);
++}
++
+ const app = express();
+ const server = http.createServer(app);
+ const PORT = process.env.PORT || 3000;
+ 
+-app.use(cors());
++const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
++    .split(',')
++    .map(o => o.trim());
++
++app.use(cors({
++    origin: allowedOrigins,
++    credentials: true
++}));
+ app.use(express.json());
+ 
+ // Routes
+diff --git a/server/src/middlewares/auth.js b/server/src/middlewares/auth.js
+index 7e0e39a..f08e5c5 100644
+--- a/server/src/middlewares/auth.js
++++ b/server/src/middlewares/auth.js
+@@ -16,7 +16,7 @@ exports.authenticate = async (req, res, next) => {
+     try {
+         // First try to verify as a legacy local JWT
+         try {
+-            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
++            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+             req.user = decoded;
+             return next();
+         } catch (e) {
+diff --git a/server/src/middlewares/projectAccess.js b/server/src/middlewares/projectAccess.js
+new file mode 100644
+index 0000000..1b593e5
+--- /dev/null
++++ b/server/src/middlewares/projectAccess.js
+@@ -0,0 +1,50 @@
++const { get } = require('../config/db');
++
++/**
++ * Checks whether a given user is a member of a given project.
++ * Admins bypass this check entirely (see requireProjectAccess below).
++ */
++async function isMember(projectId, userId) {
++    if (!projectId || !userId) return false;
++    const row = await get(
++        'SELECT 1 FROM project_members WHERE project_id = ? AND user_id = ?',
++        [projectId, userId]
++    );
++    return !!row;
++}
++
++/**
++ * Route-guard factory. Pass in a function that resolves the relevant
++ * project_id from the request (params, body, or a DB lookup via a
++ * task/file id). Admins always pass. Everyone else must be a row in
++ * project_members for that project.
++ *
++ * Usage:
++ *   router.get('/:id', requireProjectAccess(req => req.params.id), Controller.getById);
++ *   router.put('/:id', requireProjectAccess(async req => {
++ *       const task = await Task.findById(req.params.id);
++ *       return task && task.project_id;
++ *   }), Controller.update);
++ */
++function requireProjectAccess(resolveProjectId) {
++    return async (req, res, next) => {
++        try {
++            if (!req.user) return res.status(401).json({ error: 'Unauthorized' });
++            if (req.user.role === 'Admin') return next();
++
++            const projectId = await resolveProjectId(req);
++            if (!projectId) return res.status(404).json({ error: 'Not found' });
++
++            const member = await isMember(projectId, req.user.id);
++            if (!member) {
++                return res.status(403).json({ error: 'Forbidden: you are not a member of this project' });
++            }
++            next();
++        } catch (err) {
++            console.error('Project access check failed:', err);
++            res.status(500).json({ error: 'Internal server error' });
++        }
++    };
++}
++
++module.exports = { requireProjectAccess, isMember };
+diff --git a/server/src/models/File.js b/server/src/models/File.js
+index d756839..3c6896c 100644
+--- a/server/src/models/File.js
++++ b/server/src/models/File.js
+@@ -36,6 +36,10 @@ class FileModel {
+         return get('SELECT * FROM files WHERE name = ? AND project_id = ?', [name, projectId]);
+     }
+ 
++    static async findById(fileId) {
++        return get('SELECT * FROM files WHERE id = ?', [fileId]);
++    }
++
+     static async findVersionById(versionId) {
+         return get(`
+             SELECT v.*, f.name, f.project_id
+diff --git a/server/src/models/Project.js b/server/src/models/Project.js
+index 19a6923..744c968 100644
+--- a/server/src/models/Project.js
++++ b/server/src/models/Project.js
+@@ -9,6 +9,16 @@ class Project {
+         return get('SELECT * FROM projects WHERE id = ?', [id]);
+     }
+ 
++    // Used for non-Admin users: only return projects they're actually a member of.
++    static async findAllForUser(userId) {
++        return all(`
++            SELECT p.* FROM projects p
++            JOIN project_members pm ON pm.project_id = p.id
++            WHERE pm.user_id = ?
++            ORDER BY p.created_at DESC
++        `, [userId]);
++    }
++
+     static async create({ name, description, status = 'Draft', parent_project_id = null }) {
+         return run(
+             'INSERT INTO projects (name, description, status, parent_project_id) VALUES (?, ?, ?, ?) RETURNING id',
+diff --git a/server/src/routes/authRoutes.js b/server/src/routes/authRoutes.js
+index 01ff374..433ef32 100644
+--- a/server/src/routes/authRoutes.js
++++ b/server/src/routes/authRoutes.js
+@@ -1,9 +1,18 @@
+ const express = require('express');
+ const router = express.Router();
++const rateLimit = require('express-rate-limit');
+ const AuthController = require('../controllers/AuthController');
+ const { authenticate } = require('../middlewares/auth');
+ 
+-router.post('/login', AuthController.login);
++const loginLimiter = rateLimit({
++    windowMs: 15 * 60 * 1000, // 15 minutes
++    max: 10, // 10 attempts per IP per window
++    message: { error: 'Too many login attempts. Please try again in 15 minutes.' },
++    standardHeaders: true,
++    legacyHeaders: false
++});
++
++router.post('/login', loginLimiter, AuthController.login);
+ router.get('/me', authenticate, AuthController.getMe);
+ router.post('/reset-password', authenticate, AuthController.resetPassword);
+ 
+diff --git a/server/src/routes/fileRoutes.js b/server/src/routes/fileRoutes.js
+index 2fd46c6..fe21116 100644
+--- a/server/src/routes/fileRoutes.js
++++ b/server/src/routes/fileRoutes.js
+@@ -2,6 +2,9 @@ const express = require('express');
+ const router = express.Router();
+ const FileController = require('../controllers/FileController');
+ const { authenticate } = require('../middlewares/auth');
++const { requireProjectAccess } = require('../middlewares/projectAccess');
++const Task = require('../models/Task');
++const FileModel = require('../models/File');
+ const multer = require('multer');
+ const fs = require('fs');
+ const path = require('path');
+@@ -30,10 +33,24 @@ const upload = multer({
+ 
+ router.use(authenticate);
+ 
+-router.post('/project/:projectId', upload.single('file'), FileController.uploadFile);
+-router.get('/project/:projectId', FileController.getProjectFiles);
+-router.get('/task/:taskId', FileController.getTaskFiles);
+-router.get('/:fileId/versions', FileController.getFileVersions);
+-router.get('/download/:versionId', FileController.downloadOrPreview);
++const fromUrlProjectId = (req) => req.params.projectId;
++const fromTaskLookup = async (req) => {
++    const task = await Task.findById(req.params.taskId);
++    return task && task.project_id;
++};
++const fromFileLookup = async (req) => {
++    const file = await FileModel.findById(req.params.fileId);
++    return file && file.project_id;
++};
++const fromVersionLookup = async (req) => {
++    const version = await FileModel.findVersionById(req.params.versionId);
++    return version && version.project_id;
++};
++
++router.post('/project/:projectId', requireProjectAccess(fromUrlProjectId), upload.single('file'), FileController.uploadFile);
++router.get('/project/:projectId', requireProjectAccess(fromUrlProjectId), FileController.getProjectFiles);
++router.get('/task/:taskId', requireProjectAccess(fromTaskLookup), FileController.getTaskFiles);
++router.get('/:fileId/versions', requireProjectAccess(fromFileLookup), FileController.getFileVersions);
++router.get('/download/:versionId', requireProjectAccess(fromVersionLookup), FileController.downloadOrPreview);
+ 
+ module.exports = router;
+diff --git a/server/src/routes/projectRoutes.js b/server/src/routes/projectRoutes.js
+index 51051cd..c3d1a63 100644
+--- a/server/src/routes/projectRoutes.js
++++ b/server/src/routes/projectRoutes.js
+@@ -2,18 +2,21 @@ const express = require('express');
+ const router = express.Router();
+ const ProjectController = require('../controllers/ProjectController');
+ const { authenticate } = require('../middlewares/auth');
++const { requireProjectAccess } = require('../middlewares/projectAccess');
+ 
+ router.use(authenticate); // Protect all project routes
+ 
+-router.get('/', ProjectController.getAll);
+-router.get('/:id', ProjectController.getById);
+-router.post('/', ProjectController.create);
+-router.put('/:id', ProjectController.update);
+-router.put('/:id/state', ProjectController.updateState);
+-router.put('/:id/workflow-steps', ProjectController.updateWorkflowSteps);
+-router.delete('/:id', ProjectController.delete);
++const byIdParam = (req) => req.params.id;
+ 
+-router.post('/:id/members', ProjectController.addMember);
+-router.get('/:id/members', ProjectController.getMembers);
++router.get('/', ProjectController.getAll); // already filtered by membership in the controller
++router.get('/:id', requireProjectAccess(byIdParam), ProjectController.getById);
++router.post('/', ProjectController.create); // no existing project to check yet; creator is auto-added as owner
++router.put('/:id', requireProjectAccess(byIdParam), ProjectController.update);
++router.put('/:id/state', requireProjectAccess(byIdParam), ProjectController.updateState);
++router.put('/:id/workflow-steps', requireProjectAccess(byIdParam), ProjectController.updateWorkflowSteps);
++router.delete('/:id', requireProjectAccess(byIdParam), ProjectController.delete);
++
++router.post('/:id/members', requireProjectAccess(byIdParam), ProjectController.addMember);
++router.get('/:id/members', requireProjectAccess(byIdParam), ProjectController.getMembers);
+ 
+ module.exports = router;
+diff --git a/server/src/routes/taskRoutes.js b/server/src/routes/taskRoutes.js
+index c3f2896..7659ac0 100644
+--- a/server/src/routes/taskRoutes.js
++++ b/server/src/routes/taskRoutes.js
+@@ -2,14 +2,23 @@ const express = require('express');
+ const router = express.Router();
+ const TaskController = require('../controllers/TaskController');
+ const { authenticate } = require('../middlewares/auth');
++const { requireProjectAccess } = require('../middlewares/projectAccess');
++const Task = require('../models/Task');
+ 
+ router.use(authenticate); // Protect all task routes
+ 
+-router.get('/project/:projectId', TaskController.getAllByProject);
+-router.post('/', TaskController.create);
+-router.post('/suggest-priority', TaskController.suggestPriority);
+-router.put('/:id', TaskController.update);
+-router.put('/:id/timer', TaskController.toggleTimer);
+-router.delete('/:id', TaskController.delete);
++const fromUrlProjectId = (req) => req.params.projectId;
++const fromBodyProjectId = (req) => req.body.project_id;
++const fromTaskLookup = async (req) => {
++    const task = await Task.findById(req.params.id);
++    return task && task.project_id;
++};
++
++router.get('/project/:projectId', requireProjectAccess(fromUrlProjectId), TaskController.getAllByProject);
++router.post('/', requireProjectAccess(fromBodyProjectId), TaskController.create);
++router.post('/suggest-priority', TaskController.suggestPriority); // stateless helper, no project data touched
++router.put('/:id', requireProjectAccess(fromTaskLookup), TaskController.update);
++router.put('/:id/timer', requireProjectAccess(fromTaskLookup), TaskController.toggleTimer);
++router.delete('/:id', requireProjectAccess(fromTaskLookup), TaskController.delete);
+ 
+ module.exports = router;
+diff --git a/server/src/socket.js b/server/src/socket.js
+index 27ca31d..a6e492c 100644
+--- a/server/src/socket.js
++++ b/server/src/socket.js
+@@ -7,9 +7,13 @@ const connectedUsers = new Map();
+ 
+ module.exports = {
+     init: (server) => {
++        const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
++            .split(',')
++            .map(o => o.trim());
++
+         io = socketIo(server, {
+             cors: {
+-                origin: '*',
++                origin: allowedOrigins,
+                 methods: ['GET', 'POST', 'PUT', 'DELETE']
+             }
+         });
+@@ -19,7 +23,7 @@ module.exports = {
+                 const token = socket.handshake.auth.token;
+                 if (!token) return next(new Error('Authentication error'));
+                 
+-                const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret123');
++                const decoded = jwt.verify(token, process.env.JWT_SECRET);
+                 const user = await get('SELECT id, name, role FROM users WHERE id = ?', [decoded.id]);
+                 if (!user) return next(new Error('User not found'));
+ 
+ 

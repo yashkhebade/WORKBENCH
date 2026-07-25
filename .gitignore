@@ -1,0 +1,10 @@
+node_modules/
+.env
+.env.*
+!.env.example
+server/database/
+server/database.sqlite
+server/uploads/
+dist/
+build/
+*.log
