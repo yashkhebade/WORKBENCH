@@ -12,6 +12,7 @@ import { toast } from '../components/ui/toast';
 import { TaskTimer } from '../components/ui/TaskComponents';
 import { useProjects } from '../contexts/ProjectContext';
 import TaskDetailModal from '../components/ui/TaskDetailModal';
+import { X } from 'lucide-react';
 
 const COLUMNS = [
   { id: 'To Do', label: 'To Do', color: 'var(--status-todo)' },
@@ -92,6 +93,94 @@ const SortableTask = memo(({ task, isOverlay, onOpen, dragJustHappenedRef }) => 
   );
 });
 
+const CreateTaskModal = ({ statusId, projectId, onClose, onSubmit }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    description: '',
+    category: 'Hardware',
+    priority: 'Medium'
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.title.trim()) return;
+    setIsSubmitting(true);
+    await onSubmit({ ...formData, status: statusId, project_id: projectId });
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-background w-full max-w-md rounded-xl shadow-2xl border border-border flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+        <div className="flex justify-between items-center p-4 border-b border-border">
+          <h3 className="font-semibold text-lg">Create New Task</h3>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted">
+            <X size={18} />
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="p-4 flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium">Task Title *</label>
+            <input 
+              required autoFocus
+              value={formData.title} 
+              onChange={e => setFormData({...formData, title: e.target.value})} 
+              className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none" 
+              placeholder="e.g. Design v2 PCB layout" 
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium">Description</label>
+            <textarea 
+              value={formData.description} 
+              onChange={e => setFormData({...formData, description: e.target.value})} 
+              className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none" 
+              placeholder="Add details, links, or notes..." 
+              rows={3} 
+            />
+          </div>
+          <div className="flex gap-4">
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className="text-sm font-medium">Category</label>
+              <select 
+                value={formData.category} 
+                onChange={e => setFormData({...formData, category: e.target.value})} 
+                className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none"
+              >
+                <option value="Hardware">Hardware</option>
+                <option value="Firmware">Firmware</option>
+                <option value="Software">Software</option>
+                <option value="Mechanical">Mechanical</option>
+                <option value="Documentation">Documentation</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5 flex-1">
+              <label className="text-sm font-medium">Priority</label>
+              <select 
+                value={formData.priority} 
+                onChange={e => setFormData({...formData, priority: e.target.value})} 
+                className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none"
+              >
+                <option value="Low">Low</option>
+                <option value="Medium">Medium</option>
+                <option value="High">High</option>
+              </select>
+            </div>
+          </div>
+          <div className="flex justify-end gap-3 mt-4">
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-md font-medium hover:bg-muted text-muted-foreground transition-colors">Cancel</button>
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 rounded-md font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50">
+              {isSubmitting ? 'Creating...' : 'Create Task'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
 export default function TaskBoard() {
   const { user } = useAuth();
   const { socket } = useSocket();
@@ -100,6 +189,7 @@ export default function TaskBoard() {
   const [collapsedCols, setCollapsedCols] = useState({});
   const [activeDragTask, setActiveDragTask] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [creatingTaskStatus, setCreatingTaskStatus] = useState(null);
   const dragJustHappenedRef = React.useRef(false);
 
   // Filters & Search
@@ -131,25 +221,22 @@ export default function TaskBoard() {
     }
   };
 
-  const createTask = useCallback(async (statusId) => {
-    const title = prompt("Enter task title");
-    if (!title || !activeProjectId) return;
+  const handleCreateTaskSubmit = useCallback(async (taskData) => {
+    if (!activeProjectId) return;
     
     // Optimistic UI
     const tempId = 'temp-' + Date.now();
     const newTask = {
       id: tempId,
-      project_id: activeProjectId,
-      title,
-      status: statusId,
-      priority: 'Medium',
+      ...taskData,
       assignee_name: user?.name,
       due_date: null
     };
     setTasks(prev => [...prev, newTask]);
+    setCreatingTaskStatus(null);
 
     try {
-      await api.post('/tasks', { project_id: activeProjectId, title, status: statusId, priority: 'Medium' });
+      await api.post('/tasks', taskData);
       fetchTasks(activeProjectId);
       toast.add({ title: 'Task Created', description: 'Your task has been added successfully', type: 'success' });
     } catch (err) {
@@ -323,7 +410,7 @@ export default function TaskBoard() {
                 {!isCollapsed && (
                   <div className="p-3 pt-4 flex-1 flex flex-col overflow-y-auto min-h-0">
                     <button 
-                      onClick={(e) => { e.stopPropagation(); createTask(col.id); }}
+                      onClick={(e) => { e.stopPropagation(); setCreatingTaskStatus(col.id); }}
                       className="w-full py-2 mb-3 rounded-xl border border-dashed border-border-subtle bg-transparent text-text-secondary hover:text-accent-liquid-blue hover:border-accent-liquid-blue hover:bg-indigo-50/50 cursor-pointer flex items-center justify-center gap-2 text-[0.9rem] font-medium transition-all focus:outline-none group"
                       aria-label={`Add task to ${col.label}`}
                     >
@@ -368,6 +455,16 @@ export default function TaskBoard() {
             setTasks(prev => prev.map(t => t.id === updated.id ? { ...t, ...updated } : t));
             setSelectedTask(prev => ({ ...prev, ...updated }));
           }}
+        />
+      )}
+
+      {/* Create Task Modal */}
+      {creatingTaskStatus && (
+        <CreateTaskModal 
+          statusId={creatingTaskStatus}
+          projectId={activeProjectId}
+          onClose={() => setCreatingTaskStatus(null)}
+          onSubmit={handleCreateTaskSubmit}
         />
       )}
     </div>
