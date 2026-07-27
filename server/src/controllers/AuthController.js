@@ -2,6 +2,9 @@ const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
+// In-memory store for reset codes. In production, this would be in Redis or the DB.
+const resetCodes = new Map();
+
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -22,7 +25,7 @@ exports.login = async (req, res) => {
         const token = jwt.sign(
             { id: user.id, role: user.role },
             process.env.JWT_SECRET,
-            { expiresIn: '7d' } // 1 week session
+            { expiresIn: '30d' } // 30 day persistent session
         );
 
         res.json({
@@ -78,6 +81,69 @@ exports.resetPassword = async (req, res) => {
         
         res.json({ message: 'Password updated successfully' });
     } catch (err) {
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) return res.status(400).json({ error: 'Email is required' });
+
+        const user = await User.findByEmail(email);
+        if (!user) {
+            // Return success even if user doesn't exist to prevent email enumeration
+            return res.json({ message: 'If an account exists, a reset code was sent.' });
+        }
+
+        // Generate 6-digit code
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Save code with 15 minute expiration
+        resetCodes.set(email, {
+            code,
+            userId: user.id,
+            expiresAt: Date.now() + 15 * 60 * 1000
+        });
+
+        // Simulating email delivery
+        console.log(`[EMAIL MOCK] Password reset code for ${email} is: ${code}`);
+
+        // For this demo, we return the code in the response so the UI can show it.
+        // In production, NEVER do this!
+        res.json({ 
+            message: 'If an account exists, a reset code was sent.',
+            demo_code: code // DEMO ONLY
+        });
+    } catch (err) {
+        console.error('Forgot password error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.resetPasswordWithCode = async (req, res) => {
+    try {
+        const { email, code, newPassword } = req.body;
+        if (!email || !code || !newPassword) {
+            return res.status(400).json({ error: 'Missing required fields' });
+        }
+        if (newPassword.length < 8) {
+            return res.status(400).json({ error: 'New password must be at least 8 characters' });
+        }
+
+        const record = resetCodes.get(email);
+        if (!record || record.code !== code || Date.now() > record.expiresAt) {
+            return res.status(400).json({ error: 'Invalid or expired reset code' });
+        }
+
+        await User.updatePassword(record.userId, newPassword);
+        
+        // Consume the code
+        resetCodes.delete(email);
+
+        res.json({ message: 'Password has been successfully reset' });
+    } catch (err) {
+        console.error('Reset password error:', err);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

@@ -94,6 +94,7 @@ function Field({ icon: Icon, type, placeholder, value, onChange, right }) {
         value={value}
         onChange={onChange}
         required
+        autoComplete={type === 'email' ? 'username' : type === 'password' ? 'current-password' : 'off'}
         className="w-full pl-11 pr-11 py-3.5 rounded-xl text-sm text-white placeholder:text-white/30 outline-none transition-all duration-200"
         style={{
           background: 'rgba(255,255,255,0.05)',
@@ -251,18 +252,25 @@ export default function Login() {
               }
             />
 
-            {/* Remember Me */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 4px', marginTop: '-4px' }}>
-              <input 
-                type="checkbox" 
-                id="remember" 
-                checked={rememberMe} 
-                onChange={e => setRememberMe(e.target.checked)}
-                style={{ accentColor: '#8b5cf6', cursor: 'pointer', width: '14px', height: '14px' }}
-              />
-              <label htmlFor="remember" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', cursor: 'pointer', userSelect: 'none' }}>
-                Remember my email
-              </label>
+            {/* Remember Me & Forgot Password */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px', marginTop: '-4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <input 
+                  type="checkbox" 
+                  id="remember" 
+                  checked={rememberMe} 
+                  onChange={e => setRememberMe(e.target.checked)}
+                  style={{ accentColor: '#8b5cf6', cursor: 'pointer', width: '14px', height: '14px' }}
+                />
+                <label htmlFor="remember" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', cursor: 'pointer', userSelect: 'none' }}>
+                  Remember my email
+                </label>
+              </div>
+              <Link to="/forgot-password" style={{ color: '#8b5cf6', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 500 }}
+                onMouseEnter={e => e.target.style.color = '#a78bfa'}
+                onMouseLeave={e => e.target.style.color = '#8b5cf6'}>
+                Forgot Password?
+              </Link>
             </div>
 
             <button

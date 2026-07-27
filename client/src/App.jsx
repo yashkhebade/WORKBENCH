@@ -18,6 +18,8 @@ const CalendarView = lazy(() => import('./pages/CalendarView'));
 const NotesView = lazy(() => import('./pages/NotesView'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Landing = lazy(() => import('./pages/marketing/Landing'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/ResetPassword'));
 
 const FallbackLoader = () => (
   <div className="flex items-center justify-center h-screen w-full bg-background">
@@ -38,6 +40,8 @@ const AnimatedRoutes = () => {
       <Routes location={location} key={location.pathname}>
         <Route path="/login" element={<PageWrapper><Login /></PageWrapper>} />
         <Route path="/signup" element={<PageWrapper><Signup /></PageWrapper>} />
+        <Route path="/forgot-password" element={<PageWrapper><ForgotPassword /></PageWrapper>} />
+        <Route path="/reset-password" element={<PageWrapper><ResetPassword /></PageWrapper>} />
         <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
