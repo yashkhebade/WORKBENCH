@@ -31,7 +31,7 @@ export default function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
+    <div className="dark min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
       
       {/* Decorative Orbs */}
       <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[120px]" />

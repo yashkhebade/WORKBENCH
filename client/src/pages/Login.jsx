@@ -148,7 +148,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background">
+    <div className="dark min-h-screen flex bg-background">
 
       {/* ── Left panel ── */}
       <div className="hidden lg:flex flex-col justify-between relative flex-1 overflow-hidden p-16">
