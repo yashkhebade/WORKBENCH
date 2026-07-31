@@ -7,6 +7,24 @@
     <meta name="theme-color" content="#050508">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>client</title>
+    <script>
+      // PWA White Screen Failsafe:
+      // If a cached index.html requests an old JS chunk that was deleted from the server (404),
+      // the script will fail to load, resulting in a blank white screen. 
+      // This catches that error, kills the stale Service Worker, and hard reloads.
+      window.addEventListener('error', function(e) {
+        if (e.target && e.target.tagName === 'SCRIPT') {
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(function(registrations) {
+              for (let registration of registrations) {
+                registration.unregister();
+              }
+              window.location.reload(true);
+            });
+          }
+        }
+      }, true);
+    </script>
   </head>
   <body>
     <div id="root"></div>
