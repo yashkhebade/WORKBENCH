@@ -2,6 +2,7 @@ const FileModel = require('../models/File');
 const fs = require('fs');
 const path = require('path');
 const { getIo } = require('../socket');
+const telegramBot = require('../services/telegramBot');
 
 exports.uploadFile = async (req, res) => {
     try {
@@ -10,7 +11,7 @@ exports.uploadFile = async (req, res) => {
         const projectId = req.params.projectId;
         const uploaderId = req.user.id;
         const filename = req.file.originalname;
-        const filePath = req.file.path; // Set by multer
+        // The file is now in memory, not on disk
         const description = req.body.description || '';
         const taskId = req.body.task_id || null;
         const category = req.body.category || 'other';
@@ -24,6 +25,15 @@ exports.uploadFile = async (req, res) => {
         else if (mimeType.includes('text/') || mimeType.includes('json') || mimeType.includes('javascript')) filetype = 'code';
         else if (mimeType.includes('word') || mimeType.includes('document')) filetype = 'document';
 
+        // Upload directly to Telegram
+        let telegramFileId = null;
+        try {
+            telegramFileId = await telegramBot.uploadToTelegram(req.file.buffer, filename, mimeType);
+        } catch (err) {
+            console.error("Failed to upload to Telegram", err);
+            return res.status(500).json({ error: 'Failed to save file to cloud storage.' });
+        }
+
         // Check if file exists in project
         const existingFile = await FileModel.findByNameAndProject(filename, projectId);
 
@@ -31,7 +41,8 @@ exports.uploadFile = async (req, res) => {
             // Auto-versioning: Add new version
             const nextVersion = await FileModel.addVersion({
                 file_id: existingFile.id,
-                file_path: filePath
+                file_path: 'telegram',
+                telegram_file_id: telegramFileId
             });
             try { getIo().emit('file:uploaded', { name: filename, version: nextVersion }); } catch(e) {}
             res.json({ message: 'New version uploaded' });
@@ -42,12 +53,13 @@ exports.uploadFile = async (req, res) => {
                 uploader_id: uploaderId,
                 name: filename,
                 description,
-                file_path: filePath,
+                file_path: 'telegram',
                 task_id: taskId,
                 category,
                 filetype,
                 size: req.file.size,
-                tags
+                tags,
+                telegram_file_id: telegramFileId
             });
             try { getIo().emit('file:uploaded', { name: filename, version: 1, category, task_id: taskId }); } catch(e) {}
             res.status(201).json({ message: 'File uploaded' });
@@ -105,6 +117,16 @@ exports.downloadOrPreview = async (req, res) => {
         const version = await FileModel.findVersionById(req.params.versionId);
         if (!version) return res.status(404).json({ error: 'Version not found' });
 
+        // If it's a telegram file, redirect to the Telegram temporary URL
+        if (version.file_path === 'telegram' || version.telegram_file_id) {
+            const telegramFileId = version.telegram_file_id || version.file_path.split('telegram_')[1];
+            if (telegramFileId) {
+                const telegramUrl = await telegramBot.getFileUrl(telegramFileId);
+                return res.redirect(telegramUrl);
+            }
+        }
+
+        // Fallback for old local files (if any exist)
         const absolutePath = path.resolve(__dirname, '../../', version.file_path);
         const mimeType = guessMimeType(version.name);
         const isSafeToPreview = PREVIEWABLE_MIME_PREFIXES.some(p => mimeType.startsWith(p));
@@ -119,6 +141,7 @@ exports.downloadOrPreview = async (req, res) => {
             res.download(absolutePath, version.name); // Force download for anything not on the safe list
         }
     } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

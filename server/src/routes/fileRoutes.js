@@ -6,22 +6,8 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 
-// Setup storage folder per project
-const storageLocation = process.env.STORAGE_LOCATION || './uploads';
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        const projectId = req.params.projectId;
-        const dir = path.join(storageLocation, `project_${projectId}`);
-        if (!fs.existsSync(dir)) {
-            fs.mkdirSync(dir, { recursive: true });
-        }
-        cb(null, dir);
-    },
-    filename: (req, file, cb) => {
-        // unique filename on disk to avoid conflicts, DB tracks original name
-        cb(null, `${Date.now()}-${file.originalname}`);
-    }
-});
+// Use memory storage so we can forward the buffer directly to Telegram without writing to disk
+const storage = multer.memoryStorage();
 
 const upload = multer({ 
     storage,

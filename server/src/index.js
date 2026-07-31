@@ -15,6 +15,7 @@ const noteRoutes = require('./routes/noteRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
 const timelineRoutes = require('./routes/timelineRoutes');
+require('./services/telegramBot'); // Start telegram bot polling
 
 // Fail fast if critical secrets aren't configured — no silent fallback secrets.
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
