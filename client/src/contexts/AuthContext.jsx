@@ -12,52 +12,39 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      let loggedIn = false;
+      // Always use the custom backend JWT auth.
+      // Supabase is only used for email verification during signup, not for sessions.
+      const storedToken = localStorage.getItem('token');
+      if (storedToken) {
+        setToken(storedToken);
+        
+        // Show server-waking UI immediately for better UX
+        setWakingServer(true);
 
-      if (hasSupabaseConfig()) {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session) {
-          setUser({ id: session.user.id, email: session.user.email, name: session.user.email.split('@')[0], role: 'Member' });
-          setToken(session.access_token);
-          localStorage.setItem('token', session.access_token);
-          loggedIn = true;
-        }
-      } 
-      
-      // Fallback to legacy local token if no Supabase session was found (or if Supabase isn't configured)
-      if (!loggedIn) {
-        const storedToken = localStorage.getItem('token');
-        if (storedToken) {
-          setToken(storedToken);
-          
-          // Show server-waking UI immediately for better UX
-          setWakingServer(true);
-
-          let retries = 12; // ~60 seconds total - Render cold starts can take up to 50s
-          let delay = 5000;
-          
-          while (retries > 0) {
-            try {
-              const res = await api.get('/auth/me');
-              setUser(res.data);
+        let retries = 12; // ~60 seconds total - Render cold starts can take up to 50s
+        let delay = 5000;
+        
+        while (retries > 0) {
+          try {
+            const res = await api.get('/auth/me');
+            setUser(res.data);
+            setWakingServer(false);
+            break; // Success!
+          } catch (err) {
+            if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+              // Invalid or expired token
+              localStorage.removeItem('token');
+              setToken(null);
               setWakingServer(false);
-              break; // Success!
-            } catch (err) {
-              if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-                // Invalid or expired token
-                localStorage.removeItem('token');
-                setToken(null);
+              break;
+            } else {
+              // Network error, 502, 503, or timeout (Server is asleep/waking up on Render free tier)
+              retries -= 1;
+              if (retries === 0) {
                 setWakingServer(false);
-                break;
+                // Don't remove the token - let the user manually retry
               } else {
-                // Network error, 502, 503, or timeout (Server is asleep/waking up on Render free tier)
-                retries -= 1;
-                if (retries === 0) {
-                  setWakingServer(false);
-                  // Don't remove the token - let the user manually retry
-                } else {
-                  await new Promise(r => setTimeout(r, delay));
-                }
+                await new Promise(r => setTimeout(r, delay));
               }
             }
           }
@@ -70,16 +57,8 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
-    if (hasSupabaseConfig()) {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) throw error;
-      setUser({ id: data.user.id, email: data.user.email, name: data.user.email.split('@')[0], role: 'Member' });
-      setToken(data.session.access_token);
-      localStorage.setItem('token', data.session.access_token);
-      return;
-    }
-    
-    // Legacy flow
+    // Always use the custom backend JWT auth — accounts live in our PostgreSQL DB.
+    // Supabase is only used for email verification during signup.
     const res = await api.post('/auth/login', { email, password });
     localStorage.setItem('token', res.data.token);
     setToken(res.data.token);
@@ -99,9 +78,8 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    if (hasSupabaseConfig()) {
-      await supabase.auth.signOut();
-    }
+    // Sign out from Supabase if it was used for signup
+    try { if (hasSupabaseConfig()) await supabase.auth.signOut(); } catch(e) {}
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
