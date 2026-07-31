@@ -1,9 +1,9 @@
 -- 012_seed_admin_user.sql
--- Seeds the admin user (Yash) into the users table if not already present.
--- Password hash is bcrypt('2006', rounds=10)
+-- Upserts the admin user with new password hash for '2006@Yash'
 
 INSERT INTO users (name, email, password_hash, role)
-SELECT 'Yash', 'khebadeyash1234@gmail.com', '$2b$10$abgAEoorHIfq..1VuB/0s.qnI3a/fL4ufy8skfHC/j4xqH8BBbgFe', 'Admin'
-WHERE NOT EXISTS (
-    SELECT 1 FROM users WHERE LOWER(email) = 'khebadeyash1234@gmail.com'
-);
+VALUES ('Yash', 'khebadeyash1234@gmail.com', '$2b$10$a.fYbFOnchMXFsQiUspkEuKrSJy2dfFDOJptR/zyzGIt8JEQa4PYa', 'Admin')
+ON CONFLICT (email) DO UPDATE SET
+    password_hash = '$2b$10$a.fYbFOnchMXFsQiUspkEuKrSJy2dfFDOJptR/zyzGIt8JEQa4PYa',
+    name = 'Yash',
+    role = 'Admin';
