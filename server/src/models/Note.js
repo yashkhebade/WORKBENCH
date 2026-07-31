@@ -37,11 +37,11 @@ class Note {
         `, [noteId]);
     }
 
-    static async create({ project_id, author_id, task_id, file_id, title, content_markdown }) {
+    static async create({ project_id, author_id, task_id, file_id, title, content_markdown, tags, is_milestone }) {
         const res = await run(
-            `INSERT INTO notes (project_id, author_id, task_id, file_id, title, content_markdown) 
-             VALUES (?, ?, ?, ?, ?, ?) RETURNING id`,
-            [project_id, author_id, task_id || null, file_id || null, title, content_markdown]
+            `INSERT INTO notes (project_id, author_id, task_id, file_id, title, content_markdown, tags, is_milestone) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+            [project_id, author_id, task_id || null, file_id || null, title, content_markdown, tags || null, is_milestone ? 1 : 0]
         );
         const noteId = res.id;
         
@@ -52,10 +52,10 @@ class Note {
         return noteId;
     }
 
-    static async update(id, { title, content_markdown, author_id }) {
+    static async update(id, { title, content_markdown, author_id, tags, is_milestone }) {
         await run(
-            'UPDATE notes SET title = ?, content_markdown = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
-            [title, content_markdown, id]
+            'UPDATE notes SET title = ?, content_markdown = ?, tags = ?, is_milestone = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?',
+            [title, content_markdown, tags || null, is_milestone ? 1 : 0, id]
         );
         
         await run(

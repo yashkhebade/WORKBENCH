@@ -19,11 +19,21 @@ exports.uploadFile = async (req, res) => {
 
         const mimeType = req.file.mimetype;
         let filetype = 'other';
+        let autoTags = [];
+
         if (mimeType.startsWith('image/')) filetype = 'image';
         else if (mimeType.startsWith('video/')) filetype = 'video';
-        else if (mimeType.includes('pdf')) filetype = 'pdf';
+        else if (mimeType.includes('pdf')) { filetype = 'pdf'; autoTags.push('datasheet'); }
         else if (mimeType.includes('text/') || mimeType.includes('json') || mimeType.includes('javascript')) filetype = 'code';
         else if (mimeType.includes('word') || mimeType.includes('document')) filetype = 'document';
+
+        // Auto-tagging based on extension
+        const ext = path.extname(filename).toLowerCase();
+        if (['.brd', '.kicad_pcb', '.sch'].includes(ext)) autoTags.push('hardware');
+        if (['.c', '.cpp', '.h', '.ino'].includes(ext)) { filetype = 'code'; autoTags.push('firmware'); }
+        if (['.step', '.stl', '.sldprt'].includes(ext)) autoTags.push('mechanical');
+
+        const finalTags = [req.body.tags || '', ...autoTags].filter(Boolean).join(',');
 
         // Upload directly to Telegram
         let telegramFileId = null;
@@ -58,7 +68,7 @@ exports.uploadFile = async (req, res) => {
                 category,
                 filetype,
                 size: req.file.size,
-                tags,
+                tags: finalTags,
                 telegram_file_id: telegramFileId
             });
             try { getIo().emit('file:uploaded', { name: filename, version: 1, category, task_id: taskId }); } catch(e) {}

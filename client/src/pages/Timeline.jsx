@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { Search, FileText, Image, Code, File as FileIcon, FileType2, FileVideo, Plus, Upload, MessageSquare } from 'lucide-react';
+import { Search, FileText, Image, Code, File as FileIcon, FileType2, FileVideo, Plus, Upload, MessageSquare, Flag } from 'lucide-react';
 import api from '../services/api';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
+import CreateNoteModal from '../components/layout/CreateNoteModal';
+import { toast } from '../components/ui/toast';
 
 const getFileIcon = (type) => {
   switch(type) {
@@ -29,6 +31,10 @@ export default function Timeline() {
   const queryParams = new URLSearchParams(location.search);
   const projectId = queryParams.get('project_id');
   const subjectId = queryParams.get('subject_id');
+  
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const fetchTimeline = async () => {
     try {
@@ -56,18 +62,91 @@ export default function Timeline() {
     return acc;
   }, {});
 
-  const handleUpload = () => {
-    // Basic MVP upload trigger (simulated for UI structure)
-    alert("Upload dialog would open here. This will be connected to the backend soon!");
+  const handleUploadClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.onchange = (e) => {
+      if (e.target.files.length > 0) {
+        handleFileUpload(e.target.files[0]);
+      }
+    };
+    input.click();
   };
 
-  const handleNote = () => {
-    // Basic MVP note trigger
-    alert("Note capture dialog would open here.");
+  const handleFileUpload = async (file) => {
+    if (!projectId) {
+      toast.add({ title: 'Error', description: 'Please select a specific project from the sidebar to upload files.', type: 'error' });
+      return;
+    }
+    
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      await api.post(`/files/project/${projectId}`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.add({ title: 'Success', description: 'File uploaded successfully', type: 'success' });
+      fetchTimeline();
+    } catch (err) {
+      toast.add({ title: 'Error', description: 'Failed to upload file', type: 'error' });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    if (!isDragging) setIsDragging(true);
+  };
+  
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+  
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFileUpload(e.dataTransfer.files[0]);
+    }
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-background/50 relative p-6">
+    <div 
+      className="flex-1 overflow-y-auto bg-background/50 relative p-6 h-full"
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      
+      {/* Drag Overlay */}
+      {isDragging && (
+        <div className="absolute inset-0 z-[200] bg-primary/10 backdrop-blur-sm border-2 border-primary border-dashed rounded-xl flex items-center justify-center pointer-events-none m-4">
+          <div className="bg-background shadow-xl rounded-2xl p-8 flex flex-col items-center gap-4 animate-in zoom-in duration-200">
+            <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+              <Upload size={32} />
+            </div>
+            <div className="text-center">
+              <h2 className="text-2xl font-bold">Drop to Upload</h2>
+              <p className="text-muted-foreground mt-1">File will be added to this project's timeline</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Uploading State Overlay */}
+      {uploading && (
+        <div className="absolute inset-0 z-[150] bg-background/50 backdrop-blur-sm flex items-center justify-center">
+          <div className="bg-card shadow-lg rounded-xl p-4 flex items-center gap-3">
+            <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <span className="font-medium">Uploading to Telegram...</span>
+          </div>
+        </div>
+      )}
       
       {/* Header & Search */}
       <div className="max-w-4xl mx-auto mb-8 flex flex-col md:flex-row gap-4 items-start md:items-center justify-between">
@@ -93,11 +172,11 @@ export default function Timeline() {
       {/* Capture Bar */}
       <div className="max-w-4xl mx-auto mb-12">
         <div className="bg-card border border-border rounded-2xl p-2 flex gap-2 shadow-sm">
-          <button onClick={handleUpload} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors font-medium text-sm">
+          <button onClick={handleUploadClick} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors font-medium text-sm">
             <Upload size={18} /> Upload File
           </button>
           <div className="w-px bg-border my-2" />
-          <button onClick={handleNote} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors font-medium text-sm">
+          <button onClick={() => setShowNoteModal(true)} className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl hover:bg-muted text-muted-foreground hover:text-foreground transition-colors font-medium text-sm">
             <MessageSquare size={18} /> Quick Note
           </button>
         </div>
@@ -128,12 +207,12 @@ export default function Timeline() {
                       <div className="p-3 bg-muted rounded-xl">
                         {getFileIcon(item.filetype)}
                       </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-foreground text-base mb-1">{item.title}</h4>
-                        {item.content && <p className="text-muted-foreground text-sm mb-3">{item.content}</p>}
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold text-foreground text-base mb-1 truncate">{item.title}</h4>
+                        {item.content && <p className="text-muted-foreground text-sm mb-3 truncate">{item.content}</p>}
                         
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-medium">
-                          <span className="text-primary">{item.project_name}</span>
+                          <span className="text-primary truncate max-w-[150px]">{item.project_name}</span>
                           <span>&bull;</span>
                           <span>{item.author_name}</span>
                           <span>&bull;</span>
@@ -144,17 +223,44 @@ export default function Timeline() {
                               <span>{(item.size / 1024 / 1024).toFixed(2)} MB</span>
                             </>
                           )}
+                          <div className="flex-1"></div>
+                          {item.version_id && (
+                             <a href={`/api/files/download/${item.version_id}`} target="_blank" rel="noreferrer" className="text-accent-liquid-blue hover:underline">
+                               Download
+                             </a>
+                          )}
                         </div>
 
                         {item.tags && (
-                          <div className="flex gap-2 mt-3">
-                            {item.tags.split(',').map(t => (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {item.tags.split(',').map(t => t.trim() ? (
                               <span key={t} className="px-2 py-1 bg-muted/80 rounded-md text-xs text-muted-foreground">
                                 #{t.trim()}
                               </span>
-                            ))}
+                            ) : null)}
                           </div>
                         )}
+                      </div>
+                    </div>
+                  ) : item.is_milestone ? (
+                    <div className="flex gap-4 items-start bg-indigo-500/10 -m-4 p-4 rounded-xl border border-indigo-500/20">
+                      <div className="p-3 bg-indigo-500 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                        <Flag size={24} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="uppercase text-[10px] font-bold tracking-wider text-indigo-500">Milestone</span>
+                        </div>
+                        <h4 className="font-bold text-foreground text-lg mb-1">{item.title}</h4>
+                        <p className="text-foreground text-sm mb-3 whitespace-pre-wrap">{item.content}</p>
+                        
+                        <div className="flex flex-wrap items-center gap-3 text-xs text-indigo-500/70 font-medium">
+                          <span className="text-indigo-600 font-semibold">{item.project_name}</span>
+                          <span>&bull;</span>
+                          <span>{item.author_name}</span>
+                          <span>&bull;</span>
+                          <span>{format(new Date(item.created_at), 'h:mm a')}</span>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -162,14 +268,14 @@ export default function Timeline() {
                       <div className="p-3 bg-indigo-500/10 rounded-xl">
                         <MessageSquare size={24} className="text-indigo-400" />
                       </div>
-                      <div className="flex-1">
-                        {item.title && item.title !== 'Note' && (
-                          <h4 className="font-semibold text-foreground text-base mb-1">{item.title}</h4>
+                      <div className="flex-1 min-w-0">
+                        {item.title && item.title !== 'Quick Note' && (
+                          <h4 className="font-semibold text-foreground text-base mb-1 truncate">{item.title}</h4>
                         )}
                         <p className="text-foreground text-sm mb-3 whitespace-pre-wrap">{item.content}</p>
                         
                         <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground font-medium">
-                          <span className="text-primary">{item.project_name}</span>
+                          <span className="text-primary truncate max-w-[150px]">{item.project_name}</span>
                           <span>&bull;</span>
                           <span>{item.author_name}</span>
                           <span>&bull;</span>
@@ -177,12 +283,12 @@ export default function Timeline() {
                         </div>
 
                         {item.tags && (
-                          <div className="flex gap-2 mt-3">
-                            {item.tags.split(',').map(t => (
+                          <div className="flex flex-wrap gap-2 mt-3">
+                            {item.tags.split(',').map(t => t.trim() ? (
                               <span key={t} className="px-2 py-1 bg-muted/80 rounded-md text-xs text-muted-foreground">
                                 #{t.trim()}
                               </span>
-                            ))}
+                            ) : null)}
                           </div>
                         )}
                       </div>
@@ -205,6 +311,13 @@ export default function Timeline() {
         )}
       </div>
 
+      {showNoteModal && (
+        <CreateNoteModal 
+          onClose={() => setShowNoteModal(false)} 
+          onSuccess={fetchTimeline} 
+          initialProjectId={projectId} 
+        />
+      )}
     </div>
   );
 }
