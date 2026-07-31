@@ -8,6 +8,7 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [wakingServer, setWakingServer] = useState(false);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -28,18 +29,36 @@ export const AuthProvider = ({ children }) => {
         const storedToken = localStorage.getItem('token');
         if (storedToken) {
           setToken(storedToken);
-          try {
-            const res = await api.get('/auth/me');
-            setUser(res.data);
-          } catch (err) {
-            // ONLY remove token if the server specifically rejects it (401/403).
-            // If the server is just asleep (502, timeout, network error), DO NOT log them out.
-            if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-              localStorage.removeItem('token');
-              setToken(null);
+          
+          let retries = 5;
+          let delay = 2000;
+          
+          while (retries > 0) {
+            try {
+              const res = await api.get('/auth/me');
+              setUser(res.data);
+              setWakingServer(false);
+              break; // Success!
+            } catch (err) {
+              if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                // Invalid or expired token
+                localStorage.removeItem('token');
+                setToken(null);
+                setWakingServer(false);
+                break;
+              } else {
+                // Network error, 502, 503, or timeout (Server is asleep/waking up)
+                setWakingServer(true);
+                retries -= 1;
+                if (retries === 0) {
+                  setWakingServer(false);
+                  // We don't remove the token, just stop trying so they can manually refresh later
+                } else {
+                  await new Promise(r => setTimeout(r, delay));
+                  delay += 2000; // Exponential-ish backoff
+                }
+              }
             }
-            // If it's a network error/timeout, we leave the token in localStorage 
-            // so they don't have to sign in again when the server wakes up.
           }
         }
       }
@@ -84,7 +103,21 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
-  if (loading) return <div>Loading...</div>;
+  if (loading || wakingServer) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+        <h2 className="text-xl font-bold text-foreground">
+          {wakingServer ? 'Waking up the server...' : 'Loading workspace...'}
+        </h2>
+        {wakingServer && (
+          <p className="text-muted-foreground mt-2 text-center max-w-sm">
+            The free Render server went to sleep. It usually takes 30-50 seconds to wake up. Hang tight!
+          </p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ user, token, login, signup, logout }}>
