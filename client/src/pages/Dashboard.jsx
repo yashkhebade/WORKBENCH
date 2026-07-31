@@ -442,7 +442,7 @@ export default function Dashboard() {
                 <div className="flex flex-col items-center justify-center py-6 text-center">
                   <CheckCircle size={24} strokeWidth={1.5} className="text-text-secondary/40 mb-2" />
                   <span className="text-text-secondary text-sm font-medium mb-4">You're all caught up!</span>
-                  <Link to="/board" className="px-4 py-2 bg-white border border-border-subtle text-text-primary rounded-lg text-sm font-medium hover:bg-bg-subtle transition-colors shadow-sm">
+                  <Link to="/board" className="px-4 py-2 bg-white/5 border border-white/10 text-white rounded-lg text-sm font-medium hover:bg-white/10 transition-colors shadow-sm">
                     Go to Task Board
                   </Link>
                 </div>
