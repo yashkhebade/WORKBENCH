@@ -2,11 +2,18 @@ const { all } = require('../config/db');
 
 exports.getTimeline = async (req, res) => {
     try {
-        const { subject_id, project_id, search } = req.query;
+        const { subject_id, project_id, search, filter_type, filter_tag } = req.query;
         let params = [];
         
-        let fileWhere = '1=1';
-        let noteWhere = '1=1';
+        // Use 1=0 to completely disable a subquery if it doesn't match the type filter
+        let fileWhere = (!filter_type || filter_type === 'all' || filter_type === 'file') ? '1=1' : '1=0';
+        let noteWhere = (!filter_type || filter_type === 'all' || filter_type === 'note' || filter_type === 'milestone') ? '1=1' : '1=0';
+        
+        if (filter_type === 'milestone') {
+            noteWhere += ` AND n.is_milestone = 1`;
+        } else if (filter_type === 'note') {
+            noteWhere += ` AND (n.is_milestone = 0 OR n.is_milestone IS NULL)`;
+        }
         
         let paramIndex = 1;
         if (subject_id) {
@@ -28,6 +35,14 @@ exports.getTimeline = async (req, res) => {
             fileWhere += ` AND (f.name ILIKE $${paramIndex} OR f.tags ILIKE $${paramIndex} OR f.description ILIKE $${paramIndex})`;
             noteWhere += ` AND (n.title ILIKE $${paramIndex} OR n.tags ILIKE $${paramIndex} OR n.content_markdown ILIKE $${paramIndex})`;
             params.push(searchTerm);
+            paramIndex++;
+        }
+        
+        if (filter_tag && filter_tag !== 'all') {
+            const tagTerm = `%${filter_tag}%`;
+            fileWhere += ` AND f.tags ILIKE $${paramIndex}`;
+            noteWhere += ` AND n.tags ILIKE $${paramIndex}`;
+            params.push(tagTerm);
             paramIndex++;
         }
 

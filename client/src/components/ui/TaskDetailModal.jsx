@@ -257,13 +257,6 @@ function FilesTab({ task, projectId }) {
     } finally { setUploading(false); }
   };
 
-  const onDrop = (e) => {
-    e.preventDefault();
-    setDragging(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) upload(file);
-  };
-
   const EXT_ICON = (name) => {
     const ext = name?.split('.').pop()?.toLowerCase();
     if (['png','jpg','jpeg','gif','svg','webp'].includes(ext)) return '🖼️';
@@ -276,11 +269,8 @@ function FilesTab({ task, projectId }) {
 
   return (
     <div className="flex flex-col gap-4 p-5 overflow-y-auto flex-1">
-      {/* Drop zone */}
+      {/* Upload button alternative (since modal handles drop) */}
       <div
-        onDragOver={e => { e.preventDefault(); setDragging(true); }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={onDrop}
         onClick={() => inputRef.current?.click()}
         className={cn(
           'relative border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all duration-200',
@@ -333,6 +323,8 @@ function FilesTab({ task, projectId }) {
 export default function TaskDetailModal({ task: initialTask, projectId, onClose, onTaskUpdate }) {
   const [task, setTask]         = useState(initialTask);
   const [activeTab, setActiveTab] = useState('overview');
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [globalUploading, setGlobalUploading] = useState(false);
 
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose(); };
@@ -343,6 +335,28 @@ export default function TaskDetailModal({ task: initialTask, projectId, onClose,
   const handleUpdate = (updated) => {
     setTask(prev => ({ ...prev, ...updated }));
     if (onTaskUpdate) onTaskUpdate(updated);
+  };
+
+  const handleGlobalDrop = async (e) => {
+    e.preventDefault();
+    setIsDraggingOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+
+    setGlobalUploading(true);
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('task_id', task.id);
+    try {
+      await api.post(`/files/project/${projectId}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      toast.add({ title: 'Uploaded', description: 'File attached to task', type: 'success' });
+      // Force switch to files tab to see it
+      setActiveTab('files');
+    } catch {
+      toast.add({ title: 'Upload failed', type: 'error' });
+    } finally {
+      setGlobalUploading(false);
+    }
   };
 
   const statusColor =
@@ -357,9 +371,34 @@ export default function TaskDetailModal({ task: initialTask, projectId, onClose,
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="bg-background w-full max-w-3xl rounded-2xl border border-border shadow-2xl flex flex-col overflow-hidden"
+        onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }}
+        onDragLeave={() => setIsDraggingOver(false)}
+        onDrop={handleGlobalDrop}
+        className={cn(
+          "bg-background w-full max-w-3xl rounded-2xl border shadow-2xl flex flex-col overflow-hidden relative transition-colors duration-200",
+          isDraggingOver ? "border-primary ring-4 ring-primary/20" : "border-border"
+        )}
         style={{ maxHeight: '90vh', minHeight: '520px', animation: 'tdmIn 0.2s cubic-bezier(0.22,1,0.36,1)' }}
       >
+        {/* Global Drag Overlay */}
+        {isDraggingOver && (
+          <div className="absolute inset-0 z-[100] bg-primary/10 backdrop-blur-[2px] flex flex-col items-center justify-center pointer-events-none">
+            <div className="bg-background rounded-2xl p-8 shadow-xl flex flex-col items-center text-primary animate-in zoom-in duration-200">
+              <Upload size={48} className="mb-4" />
+              <h2 className="text-2xl font-bold">Drop to attach file to task</h2>
+            </div>
+          </div>
+        )}
+
+        {/* Global Uploading Overlay */}
+        {globalUploading && (
+          <div className="absolute inset-0 z-[100] bg-background/50 backdrop-blur-[2px] flex items-center justify-center pointer-events-none">
+            <div className="bg-card shadow-lg rounded-xl p-4 flex items-center gap-3">
+              <Loader2 size={24} className="animate-spin text-primary" />
+              <span className="font-medium text-lg">Uploading to Telegram...</span>
+            </div>
+          </div>
+        )}
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-border bg-muted/30 shrink-0">
           <div className="flex items-center gap-3">

@@ -5,10 +5,12 @@ import { toast } from '../ui/toast';
 
 export default function CreateNoteModal({ onClose, onSuccess, initialProjectId }) {
   const [projects, setProjects] = useState([]);
+  const [tasks, setTasks] = useState([]);
   const [note, setNote] = useState({
     title: '',
     content_markdown: '',
     project_id: initialProjectId || '',
+    task_id: '',
     tags: '',
     is_milestone: false
   });
@@ -27,6 +29,21 @@ export default function CreateNoteModal({ onClose, onSuccess, initialProjectId }
       }
     } catch (err) {
       console.error('Failed to load projects', err);
+    }
+  };
+
+  useEffect(() => {
+    if (note.project_id) {
+      fetchTasks(note.project_id);
+    }
+  }, [note.project_id]);
+
+  const fetchTasks = async (projectId) => {
+    try {
+      const res = await api.get(`/tasks/project/${projectId}`);
+      setTasks(res.data);
+    } catch (err) {
+      console.error('Failed to load tasks', err);
     }
   };
 
@@ -75,6 +92,20 @@ export default function CreateNoteModal({ onClose, onSuccess, initialProjectId }
               </select>
             </div>
             
+            <div className="flex-1 flex flex-col gap-1.5">
+              <label className="text-sm font-medium">Link to Task (Optional)</label>
+              <select 
+                value={note.task_id} 
+                onChange={e => setNote({...note, task_id: e.target.value})} 
+                className="w-full p-2.5 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary outline-none text-sm"
+              >
+                <option value="">None</option>
+                {tasks.map(t => <option key={t.id} value={t.id}>{t.title}</option>)}
+              </select>
+            </div>
+          </div>
+          
+          <div className="flex gap-4">
             <div className="flex-1 flex flex-col gap-1.5">
               <label className="text-sm font-medium">Tags (comma separated)</label>
               <input 
