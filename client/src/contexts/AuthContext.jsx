@@ -21,8 +21,8 @@ export const AuthProvider = ({ children }) => {
         // Show server-waking UI immediately for better UX
         setWakingServer(true);
 
-        let retries = 12; // ~60 seconds total - Render cold starts can take up to 50s
-        let delay = 5000;
+        let retries = 12;
+        let delay = 3000; // 3s between retries = ~36s total
         
         while (retries > 0) {
           try {

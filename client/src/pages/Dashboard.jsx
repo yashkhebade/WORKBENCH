@@ -233,8 +233,8 @@ export default function Dashboard() {
   const fetchDashboardData = useCallback(async () => {
     setError(null);
     setLoading(true);
-    let retries = 12; // ~60s patience for Render cold starts
-    let delay = 5000;
+    let retries = 12;
+    let delay = 3000; // 3s between retries
     while (retries > 0) {
       try {
         const res = await api.get('/dashboard');
