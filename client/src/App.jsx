@@ -43,7 +43,7 @@ const AnimatedRoutes = () => {
         <Route path="/signup" element={<PageWrapper><Signup /></PageWrapper>} />
         <Route path="/forgot-password" element={<PageWrapper><ForgotPassword /></PageWrapper>} />
         <Route path="/reset-password" element={<PageWrapper><ResetPassword /></PageWrapper>} />
-        <Route path="/" element={<PageWrapper><Landing /></PageWrapper>} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Layout>
