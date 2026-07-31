@@ -69,7 +69,14 @@ function ParticleCanvas() {
   }, []);
 
   return (
-    <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ opacity: 0.7 }} />
+    <div className="absolute inset-0 w-full h-full overflow-hidden bg-[#050508]">
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-500/20 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-500/20 rounded-full blur-[120px]" />
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full mix-blend-screen opacity-50" />
+      
+      {/* Hardware Grid overlay */}
+      <div className="absolute inset-0 bg-[url('https://transparenttextures.com/patterns/cubes.png')] opacity-[0.03] mix-blend-overlay"></div>
+    </div>
   );
 }
 
@@ -95,23 +102,7 @@ function Field({ icon: Icon, type, placeholder, value, onChange, right }) {
         onChange={onChange}
         required
         autoComplete={type === 'email' ? 'username' : type === 'password' ? 'current-password' : 'off'}
-        className="w-full pl-11 pr-11 py-3.5 rounded-xl text-sm text-white placeholder:text-white/30 outline-none transition-all duration-200"
-        style={{
-          background: 'rgba(255,255,255,0.05)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          boxShadow: 'none',
-        }}
-        onFocus={e => {
-          e.target.style.border = '1px solid rgba(139,92,246,0.6)';
-          e.target.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.15)';
-          e.target.style.background = 'rgba(139,92,246,0.08)';
-        }}
-        onBlur={e => {
-          e.target.style.border = '1px solid rgba(255,255,255,0.1)';
-          e.target.style.boxShadow = 'none';
-          e.target.style.background = 'rgba(255,255,255,0.05)';
-        }}
-      />
+        className="w-full pl-11 pr-11 py-3.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all duration-300 bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] hover:border-white/20 focus:bg-white/[0.05] focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
       {right && <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">{right}</div>}
     </div>
   );
@@ -156,34 +147,33 @@ export default function Login() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', background: '#0b0b12' }}>
+    <div className="min-h-screen flex bg-background">
 
       {/* ── Left panel ── */}
-      <div className="hidden lg:flex flex-col justify-between relative flex-1 overflow-hidden p-12">
+      <div className="hidden lg:flex flex-col justify-between relative flex-1 overflow-hidden p-16">
         <ParticleCanvas />
-
-        {/* Gradient orbs */}
-        <div style={{ position: 'absolute', top: '10%', left: '30%', width: '420px', height: '420px', background: 'radial-gradient(circle, rgba(139,92,246,0.22) 0%, transparent 70%)', borderRadius: '50%', filter: 'blur(50px)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '15%', left: '5%', width: '280px', height: '280px', background: 'radial-gradient(circle, rgba(59,130,246,0.18) 0%, transparent 70%)', borderRadius: '50%', filter: 'blur(40px)', pointerEvents: 'none' }} />
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#8b5cf6,#3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Cpu size={22} color="white" />
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+            <Cpu size={22} className="text-white" />
           </div>
-          <span style={{ color: 'white', fontWeight: 700, fontSize: '1.1rem', letterSpacing: '-0.01em' }}>HW Team Hub</span>
+          <span className="text-white font-bold text-xl tracking-tight">HW Team Hub</span>
         </div>
 
         {/* Hero text */}
-        <div className="relative z-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] mb-4" style={{ color: 'rgba(139,92,246,0.9)' }}>Hardware Project Management</p>
-          <h2 style={{ fontSize: '2.8rem', fontWeight: 800, lineHeight: 1.1, color: 'white', marginBottom: '1.2rem' }}>
+        <div className="relative z-10 max-w-lg">
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/5 border border-white/10 mb-6">
+            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-pulse"></span>
+            <span className="text-xs font-semibold uppercase tracking-wider text-indigo-300">Workspace Login</span>
+          </div>
+          <h2 className="text-5xl font-black leading-[1.1] text-white mb-6 tracking-tight">
             Build better<br />
-            <span style={{ background: 'linear-gradient(90deg,#8b5cf6,#3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
               hardware, together.
             </span>
           </h2>
-          <p style={{ color: 'rgba(255,255,255,0.45)', fontSize: '1rem', lineHeight: 1.7, maxWidth: 380 }}>
+          <p className="text-text-secondary text-lg leading-relaxed">
             Streamline your PCB design pipeline, track firmware tasks, and collaborate with your engineering team — all in one workspace.
           </p>
 
@@ -196,37 +186,39 @@ export default function Login() {
 
         {/* Bottom quote */}
         <div className="relative z-10">
-          <p style={{ color: 'rgba(255,255,255,0.3)', fontSize: '0.8rem' }}>
+          <p className="text-sm text-text-secondary/60 font-medium">
             © {new Date().getFullYear()} HW Team Hub · Built for hardware engineers
           </p>
         </div>
       </div>
 
       {/* ── Right panel (login form) ── */}
-      <div className="flex flex-col items-center justify-center w-full lg:w-[480px] lg:min-w-[480px] p-8 relative"
-        style={{ background: 'rgba(255,255,255,0.02)', borderLeft: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="flex flex-col items-center justify-center w-full lg:w-[540px] lg:min-w-[540px] p-8 relative bg-white/[0.01] border-l border-white/5 backdrop-blur-3xl shadow-[-20px_0_40px_rgba(0,0,0,0.2)]">
 
         {/* Mobile logo */}
-        <div className="flex lg:hidden items-center gap-3 mb-10">
-          <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#8b5cf6,#3b82f6)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <Cpu size={22} color="white" />
+        <div className="flex lg:hidden items-center gap-3 mb-12">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+            <Cpu size={22} className="text-white" />
           </div>
-          <span style={{ color: 'white', fontWeight: 700, fontSize: '1.1rem' }}>HW Team Hub</span>
+          <span className="text-white font-bold text-xl">HW Team Hub</span>
         </div>
 
-        <div style={{ width: '100%', maxWidth: 380 }}>
+        <div className="w-full max-w-[400px]">
           {/* Heading */}
-          <h1 style={{ color: 'white', fontSize: '1.75rem', fontWeight: 800, marginBottom: '0.4rem', letterSpacing: '-0.02em' }}>
-            Welcome back
-          </h1>
-          <p style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.9rem', marginBottom: '2.5rem' }}>
-            Sign in to your workspace
-          </p>
+          <div className="text-center mb-10">
+            <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">
+              Welcome back
+            </h1>
+            <p className="text-text-secondary">
+              Enter your credentials to access your workspace
+            </p>
+          </div>
 
           {/* Error banner */}
           {error && (
-            <div style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.25)', color: '#fca5a5', padding: '0.85rem 1rem', borderRadius: 12, marginBottom: '1.5rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: '1rem' }}>⚠</span> {error}
+            <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6 animate-in fade-in slide-in-from-top-2">
+              <Shield size={16} className="shrink-0" /> 
+              <span>{error}</span>
             </div>
           )}
 
@@ -248,27 +240,30 @@ export default function Login() {
                 <button type="button" onClick={() => setShowPw(v => !v)}
                   style={{ color: 'rgba(255,255,255,0.3)', cursor: 'pointer', background: 'none', border: 'none', padding: 4, display: 'flex', alignItems: 'center' }}>
                   {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
+                <button type="button" onClick={() => setShowPw(v => !v)} className="text-white/30 hover:text-white transition-colors p-1">
+                  {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               }
             />
 
             {/* Remember Me & Forgot Password */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px', marginTop: '-4px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input 
-                  type="checkbox" 
-                  id="remember" 
-                  checked={rememberMe} 
-                  onChange={e => setRememberMe(e.target.checked)}
-                  style={{ accentColor: '#8b5cf6', cursor: 'pointer', width: '14px', height: '14px' }}
-                />
-                <label htmlFor="remember" style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem', cursor: 'pointer', userSelect: 'none' }}>
-                  Remember my email
-                </label>
-              </div>
-              <Link to="/forgot-password" style={{ color: '#8b5cf6', fontSize: '0.8rem', textDecoration: 'none', fontWeight: 500 }}
-                onMouseEnter={e => e.target.style.color = '#a78bfa'}
-                onMouseLeave={e => e.target.style.color = '#8b5cf6'}>
+            <div className="flex items-center justify-between px-1 mt-1">
+              <label className="flex items-center gap-2.5 cursor-pointer group">
+                <div className="relative flex items-center justify-center w-4 h-4 rounded border border-white/20 bg-white/5 group-hover:border-primary/50 transition-colors">
+                  <input 
+                    type="checkbox" 
+                    checked={rememberMe} 
+                    onChange={e => setRememberMe(e.target.checked)}
+                    className="peer absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                  <div className="absolute inset-0 rounded bg-primary scale-0 peer-checked:scale-100 transition-transform duration-200" />
+                  <svg className="w-3 h-3 text-white absolute opacity-0 peer-checked:opacity-100 transition-opacity duration-200" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <span className="text-sm text-text-secondary group-hover:text-white transition-colors">
+                  Remember me
+                </span>
+              </label>
+              <Link to="/forgot-password" className="text-sm font-medium text-primary hover:text-indigo-300 transition-colors">
                 Forgot Password?
               </Link>
             </div>
@@ -276,26 +271,11 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading}
-              style={{
-                marginTop: '0.5rem',
-                width: '100%',
-                padding: '0.9rem 1.5rem',
-                borderRadius: 12,
-                border: 'none',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-                background: isLoading ? 'rgba(139,92,246,0.5)' : 'linear-gradient(135deg,#8b5cf6,#6d28d9)',
-                color: 'white',
-                fontWeight: 700,
-                fontSize: '0.95rem',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8,
-                boxShadow: isLoading ? 'none' : '0 0 24px rgba(139,92,246,0.35)',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => { if (!isLoading) e.currentTarget.style.transform = 'translateY(-1px)'; e.currentTarget.style.boxShadow = '0 0 36px rgba(139,92,246,0.5)'; }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = isLoading ? 'none' : '0 0 24px rgba(139,92,246,0.35)'; }}
+              className={`mt-4 w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-white transition-all duration-300 ${
+                isLoading 
+                  ? 'bg-primary/50 cursor-not-allowed' 
+                  : 'bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 hover:shadow-[0_0_30px_rgba(99,102,241,0.4)] hover:-translate-y-0.5'
+              }`}
             >
               {isLoading
                 ? <><Loader2 size={18} className="animate-spin" /> Signing in…</>
@@ -305,25 +285,23 @@ export default function Login() {
           </form>
 
           {/* Divider + Sign up */}
-          <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', width: '100%', gap: 12 }}>
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
-              <span style={{ color: 'rgba(255,255,255,0.25)', fontSize: '0.75rem' }}>or</span>
-              <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.07)' }} />
+          <div className="mt-10 flex flex-col items-center gap-6">
+            <div className="flex items-center w-full gap-4">
+              <div className="flex-1 h-px bg-white/10" />
+              <span className="text-xs font-medium text-white/30 uppercase tracking-widest">or</span>
+              <div className="flex-1 h-px bg-white/10" />
             </div>
-            <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '0.85rem', textAlign: 'center' }}>
+            <p className="text-sm text-text-secondary text-center">
               Don't have an account?{' '}
-              <Link to="/signup" style={{ color: '#8b5cf6', fontWeight: 600, textDecoration: 'none' }}
-                onMouseEnter={e => e.target.style.color = '#a78bfa'}
-                onMouseLeave={e => e.target.style.color = '#8b5cf6'}>
-                Request access →
+              <Link to="/signup" className="text-primary font-semibold hover:text-indigo-300 transition-colors ml-1">
+                Request access &rarr;
               </Link>
             </p>
           </div>
 
           {/* Security note */}
-          <div style={{ marginTop: '2.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, color: 'rgba(255,255,255,0.2)', fontSize: '0.75rem' }}>
-            <Shield size={11} />
+          <div className="mt-12 flex items-center justify-center gap-2 text-xs font-medium text-white/20">
+            <Shield size={14} />
             <span>256-bit encrypted · Authorized personnel only</span>
           </div>
         </div>

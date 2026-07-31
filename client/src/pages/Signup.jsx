@@ -31,67 +31,73 @@ export default function Signup() {
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-background">
       
       {/* Decorative Orbs */}
-      <div className="animate-float" style={{ position: 'absolute', top: '15%', left: '20%', width: '300px', height: '300px', background: 'radial-gradient(circle, rgba(16,185,129,0.2) 0%, transparent 70%)', borderRadius: '50%', filter: 'blur(40px)', zIndex: 0 }} />
-      <div className="animate-float" style={{ position: 'absolute', bottom: '15%', right: '20%', width: '400px', height: '400px', background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', borderRadius: '50%', filter: 'blur(40px)', zIndex: 0, animationDelay: '2s' }} />
+      <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-emerald-500/10 rounded-full blur-[120px]" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-indigo-500/10 rounded-full blur-[120px]" />
+      
+      {/* Hardware Grid overlay */}
+      <div className="absolute inset-0 bg-[url('https://transparenttextures.com/patterns/cubes.png')] opacity-[0.03] mix-blend-overlay pointer-events-none"></div>
 
-      <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', padding: '3rem', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+      <div className="w-full max-w-[420px] p-10 z-10 flex flex-col items-center bg-white/[0.01] border border-white/5 backdrop-blur-3xl shadow-2xl rounded-3xl mx-4">
         
-        <div style={{ width: '60px', height: '60px', borderRadius: '16px', background: 'linear-gradient(135deg, #10b981, var(--accent))', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '1.5rem', boxShadow: '0 8px 25px rgba(16,185,129,0.4)' }}>
-          <UserPlus size={32} color="white" />
+        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center mb-8 shadow-[0_8px_30px_rgba(16,185,129,0.3)]">
+          <UserPlus size={32} className="text-white" />
         </div>
 
-        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '0.5rem', background: 'linear-gradient(to right, #fff, #94a3b8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+        <h1 className="text-3xl font-bold mb-2 tracking-tight text-white">
           Create Account
         </h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: '2.5rem', textAlign: 'center' }}>
-          Join the hardware workspace.<br/>(Powered by Supabase)
+        <p className="text-text-secondary mb-10 text-center">
+          Join the hardware workspace.<br/><span className="text-xs opacity-50">(Powered by Supabase)</span>
         </p>
         
         {error && (
-          <div className="animate-shake" style={{ width: '100%', background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.2)', color: '#f87171', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
-            {error}
+          <div className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm mb-6 animate-in fade-in slide-in-from-top-2">
+            <span>{error}</span>
           </div>
         )}
         
         {success && (
-          <div style={{ width: '100%', background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.2)', color: '#10b981', padding: '0.8rem', borderRadius: '8px', marginBottom: '1.5rem', textAlign: 'center', fontSize: '0.9rem' }}>
-            {success}
+          <div className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm mb-6 animate-in fade-in slide-in-from-top-2">
+            <span>{success}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-5">
           
-          <div style={{ position: 'relative' }}>
-            <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="relative group">
+            <Mail size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-emerald-400 transition-colors z-10" />
             <input 
               type="email" 
               placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '10px', color: 'white', transition: 'all 0.2s' }}
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all duration-300 bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] hover:border-white/20 focus:bg-white/[0.05] focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10"
               required
             />
           </div>
 
-          <div style={{ position: 'relative' }}>
-            <Lock size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <div className="relative group">
+            <Lock size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-white/30 group-focus-within:text-emerald-400 transition-colors z-10" />
             <input 
               type="password" 
               placeholder="Create Password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ width: '100%', padding: '0.8rem 1rem 0.8rem 2.8rem', background: 'rgba(0,0,0,0.2)', border: '1px solid var(--border-color)', borderRadius: '10px', color: 'white', transition: 'all 0.2s' }}
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all duration-300 bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] hover:border-white/20 focus:bg-white/[0.05] focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10"
               required
             />
           </div>
 
           <button 
             type="submit" 
-            className="btn btn-primary" 
-            style={{ width: '100%', padding: '0.9rem', marginTop: '0.5rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', fontSize: '1rem', background: 'linear-gradient(135deg, #10b981, #059669)', boxShadow: '0 4px 15px rgba(16,185,129,0.4)' }}
+            className={`mt-4 w-full h-12 rounded-xl flex items-center justify-center gap-2 font-bold text-white transition-all duration-300 ${
+              isLoading || success
+                ? 'bg-emerald-600/50 cursor-not-allowed' 
+                : 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 hover:shadow-[0_0_30px_rgba(16,185,129,0.4)] hover:-translate-y-0.5'
+            }`}
             disabled={isLoading || success}
           >
             {isLoading ? <><Loader2 className="animate-spin" size={18} /> Registering...</> : 'Sign Up'} 
@@ -99,8 +105,8 @@ export default function Signup() {
           </button>
         </form>
 
-        <div style={{ marginTop: '2rem', fontSize: '0.85rem', color: 'var(--text-muted)', textAlign: 'center' }}>
-          Already have an account? <Link to="/login" style={{ color: 'var(--accent)', textDecoration: 'none', fontWeight: 'bold' }}>Sign In</Link>
+        <div className="mt-8 text-sm text-text-secondary text-center">
+          Already have an account? <Link to="/login" className="text-emerald-500 font-semibold hover:text-emerald-400 transition-colors ml-1">Sign In</Link>
         </div>
       </div>
     </div>
