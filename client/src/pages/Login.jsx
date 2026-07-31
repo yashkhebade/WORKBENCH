@@ -103,6 +103,7 @@ function Field({ icon: Icon, type, placeholder, value, onChange, right }) {
         required
         autoComplete={type === 'email' ? 'username' : type === 'password' ? 'current-password' : 'off'}
         className="w-full pl-11 pr-11 py-3.5 rounded-xl text-sm text-foreground placeholder:text-muted-foreground outline-none transition-all duration-300 bg-white/[0.03] border border-white/10 hover:bg-white/[0.05] hover:border-white/20 focus:bg-white/[0.05] focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
+      />
       {right && <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10">{right}</div>}
     </div>
   );
@@ -237,10 +238,7 @@ export default function Login() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               right={
-                <button type="button" onClick={() => setShowPw(v => !v)}
-                  style={{ color: 'rgba(255,255,255,0.3)', cursor: 'pointer', background: 'none', border: 'none', padding: 4, display: 'flex', alignItems: 'center' }}>
-                  {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
-                <button type="button" onClick={() => setShowPw(v => !v)} className="text-white/30 hover:text-white transition-colors p-1">
+                <button type="button" onClick={() => setShowPw(v => !v)} className="text-white/30 hover:text-white transition-colors p-1 flex items-center justify-center">
                   {showPw ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
               }
