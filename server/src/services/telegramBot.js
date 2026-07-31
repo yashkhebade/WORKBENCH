@@ -1,4 +1,6 @@
-const TelegramBot = require('node-telegram-bot-api');
+const TelegramBotPkg = require('node-telegram-bot-api');
+// Handle newer versions that use named exports or ES module wrappers
+const TelegramBot = TelegramBotPkg.default || TelegramBotPkg.TelegramBot || TelegramBotPkg;
 const FileModel = require('../models/File');
 const NoteModel = require('../models/Note');
 const ProjectModel = require('../models/Project');
