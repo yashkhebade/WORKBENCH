@@ -12,7 +12,7 @@ import { Link } from 'react-router-dom';
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/30">
+    <div className="dark min-h-screen bg-background text-foreground flex flex-col font-sans selection:bg-primary/30">
       <Helmet>
         <title>HW Team Hub | The Ultimate Hardware Engineering Workspace</title>
         <meta name="description" content="Streamline your PCB design pipeline, track firmware tasks, and collaborate with your engineering team — all in one workspace." />
