@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Star, Github } from 'lucide-react';
+import { Star } from 'lucide-react';
 
 export default function SocialProof() {
   return (
@@ -35,9 +35,6 @@ export default function SocialProof() {
           </div>
 
           <div className="flex flex-col items-center justify-center p-6 glass-panel rounded-2xl border border-white/5 bg-white/[0.02]">
-            <div className="flex items-center gap-2 mb-2 text-white">
-              <Github size={24} />
-            </div>
             <div className="text-2xl font-bold text-white mb-1">2.4k+</div>
             <div className="text-sm text-text-secondary">GitHub Stars</div>
           </div>

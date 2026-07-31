@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Cpu, Github, Twitter, Linkedin } from 'lucide-react';
+import { Cpu, Globe, MessageCircle, Briefcase } from 'lucide-react';
 
 export default function MarketingFooter() {
   return (
@@ -19,9 +19,9 @@ export default function MarketingFooter() {
               The ultimate workspace designed specifically for hardware engineering teams to build better, together.
             </p>
             <div className="flex items-center gap-4 text-text-secondary">
-              <a href="#" className="hover:text-white transition-colors"><Github size={20} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Twitter size={20} /></a>
-              <a href="#" className="hover:text-white transition-colors"><Linkedin size={20} /></a>
+              <a href="#" className="hover:text-white transition-colors"><Globe size={20} /></a>
+              <a href="#" className="hover:text-white transition-colors"><MessageCircle size={20} /></a>
+              <a href="#" className="hover:text-white transition-colors"><Briefcase size={20} /></a>
             </div>
           </div>
 

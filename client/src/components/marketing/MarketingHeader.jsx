@@ -1,8 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../../contexts/AuthContext';
-import { Cpu } from 'lucide-react';
-import { Button } from '../../ui/button';
+import { useAuth } from "../../contexts/AuthContext";
+import { Menu, X } from "lucide-react";
+import { Button } from "../ui/button";
 
 export default function MarketingHeader() {
   const { user } = useAuth();

@@ -7,7 +7,7 @@ import SocialProof from '../../components/marketing/SocialProof';
 import Features from '../../components/marketing/Features';
 import Comparison from '../../components/marketing/Comparison';
 import Pricing from '../../components/marketing/Pricing';
-import { Button } from '../../ui/button';
+import { Button } from '../../components/ui/button';
 import { Link } from 'react-router-dom';
 
 export default function Landing() {
