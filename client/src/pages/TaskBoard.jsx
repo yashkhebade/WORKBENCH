@@ -3,7 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { Plus, Calendar as CalendarIcon, User, ChevronRight, ChevronDown, Filter, Search } from 'lucide-react';
-import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDebounce } from '../hooks/useDebounce';
@@ -89,6 +89,82 @@ const SortableTask = memo(({ task, isOverlay, onOpen, dragJustHappenedRef }) => 
 
       {/* Task Timer UI */}
       <TaskTimer task={task} onTimerUpdate={(updated) => {}} />
+    </div>
+  );
+});
+
+const KanbanColumn = memo(({ col, colTasks, isCollapsed, onToggle, onAdd, onTaskOpen, dragJustHappenedRef }) => {
+  const { setNodeRef } = useDroppable({ id: col.id, data: { type: 'Column' } });
+
+  return (
+    <div 
+      ref={setNodeRef}
+      className={cn(
+        "flex flex-col bg-white/5 rounded-2xl border border-white/10 shadow-sm transition-all duration-300 overflow-hidden min-h-[300px] xl:min-h-0",
+        isCollapsed ? "opacity-75" : "w-full"
+      )}
+    >
+      {/* Column Header */}
+      <button 
+        onClick={() => onToggle(col.id)}
+        className="w-full px-4 py-3.5 flex justify-between items-center border-b border-white/10 hover:bg-white/5 focus:outline-none min-h-[56px] text-left transition-colors group cursor-pointer"
+        aria-expanded={!isCollapsed}
+        aria-label={`Toggle column ${col.label}`}
+      >
+        {!isCollapsed ? (
+          <>
+            <div className="flex items-center gap-2.5">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: col.color, boxShadow: `0 0 10px ${col.color}80` }} />
+              <h3 className="text-[0.95rem] font-semibold text-text-primary tracking-tight m-0">{col.label}</h3>
+              <span 
+                className="px-2 py-0.5 rounded-full text-[0.7rem] font-bold shadow-sm"
+                style={{ backgroundColor: `color-mix(in srgb, ${col.color} 15%, transparent)`, color: col.color }}
+              >
+                {colTasks.length}
+              </span>
+            </div>
+            <div className="p-1 rounded-md group-hover:bg-black/5 transition-colors">
+              <ChevronDown size={16} className="text-text-secondary opacity-50 group-hover:opacity-100 transition-opacity" />
+            </div>
+          </>
+        ) : (
+          <div className="flex flex-col items-center gap-4 w-full">
+            <ChevronRight size={16} className="text-text-secondary" />
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: col.color, boxShadow: `0 0 10px ${col.color}80` }} />
+            <span className="[writing-mode:vertical-rl] rotate-180 font-semibold text-text-secondary mt-4">{col.label}</span>
+          </div>
+        )}
+      </button>
+
+      {/* Column Content */}
+      {!isCollapsed && (
+        <div className="p-3 pt-4 flex-1 flex flex-col overflow-y-auto min-h-0">
+          <button 
+            onClick={(e) => { e.stopPropagation(); onAdd(col.id); }}
+            className="w-full py-2 mb-3 rounded-xl border border-dashed border-white/20 bg-transparent text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/10 cursor-pointer flex items-center justify-center gap-2 text-[0.9rem] font-medium transition-all focus:outline-none group"
+            aria-label={`Add task to ${col.label}`}
+          >
+            <Plus size={16} className="opacity-70 group-hover:opacity-100" />
+            <span>Add Issue</span>
+          </button>
+          
+          <SortableContext id={col.id} items={colTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
+            <div className="min-h-[100px] h-full flex flex-col">
+              {colTasks.map(task => (
+                <SortableTask key={task.id} task={task} onOpen={onTaskOpen} dragJustHappenedRef={dragJustHappenedRef} />
+              ))}
+              {colTasks.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-10 opacity-60 flex-1">
+                  <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-3">
+                    <div className="w-4 h-4 rounded-full border-2 border-dashed border-gray-400" />
+                  </div>
+                  <p className="text-xs font-medium text-gray-400">No tasks yet</p>
+                </div>
+              )}
+            </div>
+          </SortableContext>
+        </div>
+      )}
     </div>
   );
 });
@@ -367,75 +443,16 @@ export default function TaskBoard() {
             const isCollapsed = collapsedCols[col.id];
 
             return (
-              <div 
-                key={col.id} 
-                className={cn(
-                  "flex flex-col bg-white/5 rounded-2xl border border-white/10 shadow-sm transition-all duration-300 overflow-hidden min-h-[300px] xl:min-h-0",
-                  isCollapsed ? "opacity-75" : "w-full"
-                )}
-              >
-                {/* Column Header */}
-                <button 
-                  onClick={() => toggleColumn(col.id)}
-                  className="w-full px-4 py-3.5 flex justify-between items-center border-b border-white/10 hover:bg-white/5 focus:outline-none min-h-[56px] text-left transition-colors group cursor-pointer"
-                  aria-expanded={!isCollapsed}
-                  aria-label={`Toggle column ${col.label}`}
-                >
-                  {!isCollapsed ? (
-                    <>
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: col.color, boxShadow: `0 0 10px ${col.color}80` }} />
-                        <h3 className="text-[0.95rem] font-semibold text-text-primary tracking-tight m-0">{col.label}</h3>
-                        <span 
-                          className="px-2 py-0.5 rounded-full text-[0.7rem] font-bold shadow-sm"
-                          style={{ backgroundColor: `color-mix(in srgb, ${col.color} 15%, transparent)`, color: col.color }}
-                        >
-                          {colTasks.length}
-                        </span>
-                      </div>
-                      <div className="p-1 rounded-md group-hover:bg-black/5 transition-colors">
-                        <ChevronDown size={16} className="text-text-secondary opacity-50 group-hover:opacity-100 transition-opacity" />
-                      </div>
-                    </>
-                  ) : (
-                    <div className="flex flex-col items-center gap-4 w-full">
-                      <ChevronRight size={16} className="text-text-secondary" />
-                      <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: col.color, boxShadow: `0 0 10px ${col.color}80` }} />
-                      <span className="[writing-mode:vertical-rl] rotate-180 font-semibold text-text-secondary mt-4">{col.label}</span>
-                    </div>
-                  )}
-                </button>
-
-                {/* Column Content */}
-                {!isCollapsed && (
-                  <div className="p-3 pt-4 flex-1 flex flex-col overflow-y-auto min-h-0">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setCreatingTaskStatus(col.id); }}
-                      className="w-full py-2 mb-3 rounded-xl border border-dashed border-white/20 bg-transparent text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/10 cursor-pointer flex items-center justify-center gap-2 text-[0.9rem] font-medium transition-all focus:outline-none group"
-                      aria-label={`Add task to ${col.label}`}
-                    >
-                      <Plus size={16} className="opacity-70 group-hover:opacity-100" />
-                      <span>Add Issue</span>
-                    </button>
-                    
-                    <SortableContext id={col.id} items={colTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
-                      <div className="min-h-[100px]">
-                        {colTasks.map(task => (
-                          <SortableTask key={task.id} task={task} onOpen={setSelectedTask} dragJustHappenedRef={dragJustHappenedRef} />
-                        ))}
-                        {colTasks.length === 0 && (
-                          <div className="flex flex-col items-center justify-center py-10 opacity-60">
-                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-3">
-                              <div className="w-4 h-4 rounded-full border-2 border-dashed border-gray-400" />
-                            </div>
-                            <p className="text-xs font-medium text-gray-400">No tasks yet</p>
-                          </div>
-                        )}
-                      </div>
-                    </SortableContext>
-                  </div>
-                )}
-              </div>
+              <KanbanColumn 
+                key={col.id}
+                col={col}
+                colTasks={colTasks}
+                isCollapsed={isCollapsed}
+                onToggle={toggleColumn}
+                onAdd={setCreatingTaskStatus}
+                onTaskOpen={setSelectedTask}
+                dragJustHappenedRef={dragJustHappenedRef}
+              />
             );
           })}
         </div>
