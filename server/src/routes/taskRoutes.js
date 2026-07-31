@@ -18,7 +18,7 @@ router.get('/project/:projectId', requireProjectAccess(fromUrlProjectId), TaskCo
 router.post('/', requireProjectAccess(fromBodyProjectId), TaskController.create);
 router.post('/suggest-priority', TaskController.suggestPriority); // stateless helper, no project data touched
 router.put('/:id', requireProjectAccess(fromTaskLookup), TaskController.update);
-router.put('/:id/timer', requireProjectAccess(fromTaskLookup), TaskController.toggleTimer);
-router.delete('/:id', requireProjectAccess(fromTaskLookup), TaskController.delete);
+router.get('/:id/comments', requireProjectAccess(fromTaskLookup), TaskController.getComments);
+router.post('/:id/comments', requireProjectAccess(fromTaskLookup), TaskController.addComment);
 
 module.exports = router;

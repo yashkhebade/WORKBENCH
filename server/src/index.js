@@ -15,6 +15,9 @@ const noteRoutes = require('./routes/noteRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const subjectRoutes = require('./routes/subjectRoutes');
 const timelineRoutes = require('./routes/timelineRoutes');
+const teamRoutes = require('./routes/teamRoutes');
+const searchRoutes = require('./routes/searchRoutes');
+const userRoutes = require('./routes/userRoutes');
 require('./services/telegramBot'); // Start telegram bot polling
 
 // Fail fast if critical secrets aren't configured — no silent fallback secrets.
@@ -59,6 +62,9 @@ app.use('/api/notes', noteRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/subjects', subjectRoutes);
 app.use('/api/timeline', timelineRoutes);
+app.use('/api/team', teamRoutes);
+app.use('/api/search', searchRoutes);
+app.use('/api/user', userRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date() });

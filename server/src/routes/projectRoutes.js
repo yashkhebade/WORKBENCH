@@ -14,6 +14,7 @@ router.post('/', ProjectController.create); // no existing project to check yet;
 router.put('/:id', requireProjectAccess(byIdParam), ProjectController.update);
 router.put('/:id/state', requireProjectAccess(byIdParam), ProjectController.updateState);
 router.put('/:id/workflow-steps', requireProjectAccess(byIdParam), ProjectController.updateWorkflowSteps);
+router.put('/:id/archive', requireProjectAccess(byIdParam), ProjectController.archive);
 router.delete('/:id', requireProjectAccess(byIdParam), ProjectController.delete);
 
 router.post('/:id/members', requireProjectAccess(byIdParam), ProjectController.addMember);

@@ -99,3 +99,50 @@ exports.toggleTimer = async (req, res) => {
         res.status(500).json({ error: 'Internal server error' });
     }
 };
+
+exports.getComments = async (req, res) => {
+    try {
+        const { all } = require('../config/db');
+        const comments = await all(`
+            SELECT tc.id, tc.comment, tc.created_at, u.name as user_name, u.avatar_url
+            FROM task_comments tc
+            JOIN users u ON tc.user_id = u.id
+            WHERE tc.task_id = $1
+            ORDER BY tc.created_at ASC
+        `, [req.params.id]);
+        res.json(comments);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.addComment = async (req, res) => {
+    try {
+        const { run, get } = require('../config/db');
+        const { comment } = req.body;
+        if (!comment || !comment.trim()) {
+            return res.status(400).json({ error: 'Comment text is required' });
+        }
+        const result = await run(
+            'INSERT INTO task_comments (task_id, user_id, comment) VALUES ($1, $2, $3)',
+            [req.params.id, req.user.id, comment.trim()]
+        );
+        
+        try {
+            getIo().emit('task:updated', { taskId: req.params.id });
+        } catch(e) {}
+
+        const newComment = await get(`
+            SELECT tc.id, tc.comment, tc.created_at, u.name as user_name, u.avatar_url
+            FROM task_comments tc
+            JOIN users u ON tc.user_id = u.id
+            WHERE tc.id = $1
+        `, [result.lastID]);
+
+        res.status(201).json(newComment);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};

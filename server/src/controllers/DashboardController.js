@@ -7,8 +7,8 @@ exports.getDashboardData = async (req, res) => {
         // 1. 4 Stat Cards (Current)
         const stats = await get(`
             SELECT 
-                (SELECT COUNT(*) FROM projects WHERE status != 'Done') as active_projects,
-                (SELECT COUNT(*) FROM tasks WHERE assignee_id = $1) as my_tasks,
+                (SELECT COUNT(*) FROM projects WHERE status != 'Done' AND COALESCE(archived, false) = false) as active_projects,
+                (SELECT COUNT(*) FROM tasks WHERE assignee_id = $1 AND status != 'Done') as my_tasks,
                 (SELECT COUNT(*) FROM tasks WHERE status = 'In Progress') as in_progress,
                 (SELECT COUNT(*) FROM tasks WHERE status = 'Done') as completed_tasks
         `, [userId]);
@@ -16,8 +16,8 @@ exports.getDashboardData = async (req, res) => {
         // 1b. 4 Stat Cards (7 days ago, for trends)
         const prevStats = await get(`
             SELECT 
-                (SELECT COUNT(*) FROM projects WHERE status != 'Done' AND created_at < NOW() - INTERVAL '7 days') as active_projects,
-                (SELECT COUNT(*) FROM tasks WHERE assignee_id = $1 AND created_at < NOW() - INTERVAL '7 days') as my_tasks,
+                (SELECT COUNT(*) FROM projects WHERE status != 'Done' AND COALESCE(archived, false) = false AND created_at < NOW() - INTERVAL '7 days') as active_projects,
+                (SELECT COUNT(*) FROM tasks WHERE assignee_id = $1 AND status != 'Done' AND created_at < NOW() - INTERVAL '7 days') as my_tasks,
                 (SELECT COUNT(*) FROM tasks WHERE status = 'In Progress' AND created_at < NOW() - INTERVAL '7 days') as in_progress,
                 (SELECT COUNT(*) FROM tasks WHERE status = 'Done' AND created_at < NOW() - INTERVAL '7 days') as completed_tasks
         `, [userId]);
@@ -38,21 +38,32 @@ exports.getDashboardData = async (req, res) => {
             completed_tasks: calcTrend(stats.completed_tasks, prevStats.completed_tasks)
         };
 
-
-        // 2. Active Projects List (for the 60% column)
-        const activeProjectsList = await all(`
-            SELECT p.id, p.name, p.status, p.workflow_state, p.workflow_steps,
-                (SELECT COUNT(*) FROM tasks WHERE project_id = p.id) as total_tasks,
-                (SELECT COUNT(*) FROM tasks WHERE project_id = p.id AND status = 'Done') as completed_tasks
-            FROM projects p
-            WHERE p.status != 'Done'
+        // 1c. "This Week" Urgency Summary
+        const thisWeek = await get(`
+            SELECT
+                (SELECT COUNT(*) FROM tasks WHERE due_date >= NOW() AND due_date <= NOW() + INTERVAL '7 days' AND status != 'Done') as due_this_week,
+                (SELECT COUNT(*) FROM tasks WHERE due_date < NOW() AND status != 'Done') as overdue_count
         `);
 
-        // 3. My Tasks (Prioritized, for the 40% column)
+        // 2. Active Projects List with Owner details & Timestamps
+        const activeProjectsList = await all(`
+            SELECT p.id, p.name, p.status, p.workflow_state, p.workflow_steps, p.updated_at, p.created_at,
+                (SELECT COUNT(*) FROM tasks WHERE project_id = p.id) as total_tasks,
+                (SELECT COUNT(*) FROM tasks WHERE project_id = p.id AND status = 'Done') as completed_tasks,
+                COALESCE(u.name, 'Admin') as owner_name,
+                u.avatar_url as owner_avatar
+            FROM projects p
+            LEFT JOIN project_members pm ON p.id = pm.project_id AND pm.role = 'owner'
+            LEFT JOIN users u ON pm.user_id = u.id
+            WHERE p.status != 'Done' AND COALESCE(p.archived, false) = false
+            ORDER BY p.updated_at DESC
+        `);
+
+        // 3. My Tasks (Prioritized)
         const myTasksList = await all(`
             SELECT id, title, priority, status, due_date
             FROM tasks
-            WHERE assignee_id = ? AND status != 'Done'
+            WHERE assignee_id = $1 AND status != 'Done'
             ORDER BY 
                 CASE priority WHEN 'High' THEN 1 WHEN 'Medium' THEN 2 ELSE 3 END,
                 due_date ASC
@@ -77,7 +88,7 @@ exports.getDashboardData = async (req, res) => {
 
         // 5. Recent Files
         const recentFiles = await all(`
-            SELECT f.name, v.version_number, v.uploaded_at, u.name as uploader_name
+            SELECT f.id, f.name, v.version_number, v.uploaded_at, COALESCE(u.name, 'Member') as uploader_name
             FROM files f
             JOIN file_versions v ON f.id = v.file_id
             LEFT JOIN users u ON f.uploader_id = u.id
@@ -85,14 +96,15 @@ exports.getDashboardData = async (req, res) => {
             LIMIT 5
         `);
 
+        // 6. Activity Feed with Real User Name Resolution
         const activityFeed = await all(`
-            SELECT 'task' as type, title as name, created_at as time, 'Task created' as action, (SELECT name FROM users WHERE id = assignee_id) as user_name 
-            FROM tasks
+            SELECT 'task' as type, t.title as name, t.created_at as time, 'Task created' as action, COALESCE(u.name, 'Team Member') as user_name 
+            FROM tasks t LEFT JOIN users u ON t.assignee_id = u.id
             UNION ALL
-            SELECT 'file' as type, f.name, v.uploaded_at as time, 'File uploaded (v' || CAST(v.version_number AS TEXT) || ')' as action, u.name as user_name
+            SELECT 'file' as type, f.name, v.uploaded_at as time, 'File uploaded (v' || CAST(v.version_number AS TEXT) || ')' as action, COALESCE(u.name, 'Team Member') as user_name
             FROM files f JOIN file_versions v ON f.id = v.file_id LEFT JOIN users u ON f.uploader_id = u.id
             UNION ALL
-            SELECT 'note' as type, n.title as name, n.created_at as time, 'Note created' as action, u.name as user_name
+            SELECT 'note' as type, n.title as name, n.created_at as time, 'Note created' as action, COALESCE(u.name, 'Team Member') as user_name
             FROM notes n LEFT JOIN users u ON n.author_id = u.id
             ORDER BY time DESC
             LIMIT 10
@@ -101,6 +113,7 @@ exports.getDashboardData = async (req, res) => {
         res.json({
             stats,
             trends,
+            thisWeek,
             activeProjects: activeProjectsList,
             myTasks: myTasksList,
             deadlines: upcomingDeadlines,

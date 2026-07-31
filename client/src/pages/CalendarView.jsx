@@ -26,6 +26,8 @@ export default function CalendarView() {
   // Form state
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
+  const [eventType, setEventType] = useState('meeting');
+  const [isRecurring, setIsRecurring] = useState(false);
 
   useEffect(() => {
     fetchProjects();
@@ -38,7 +40,7 @@ export default function CalendarView() {
   }, [projects]);
 
   useEffect(() => {
-    if (activeProjectId) fetchEvents(activeProjectId);
+    fetchEvents(activeProjectId || 'all');
   }, [activeProjectId]);
 
   const fetchProjects = async () => {
@@ -50,17 +52,23 @@ export default function CalendarView() {
     }
   };
 
+  const getEventColor = (type) => {
+    if (type === 'deadline') return '#ef4444'; // Red
+    if (type === 'milestone') return '#f59e0b'; // Amber
+    return '#6366f1'; // Indigo (Meeting)
+  };
+
   const fetchEvents = async (projectId) => {
     try {
-      const res = await api.get(`/calendar/project/${projectId}`);
+      const res = await api.get(`/calendar/project/${projectId || 'all'}`);
       const parsedEvents = res.data.map(e => ({
         id: e.id,
         title: e.title,
         start: e.start,
         end: e.end,
-        backgroundColor: e.type === 'task' ? 'var(--status-progress)' : 'var(--color-primary)',
-        borderColor: e.type === 'task' ? 'var(--status-progress)' : 'var(--color-primary)',
-        extendedProps: { type: e.type, raw: e.raw }
+        backgroundColor: getEventColor(e.type),
+        borderColor: getEventColor(e.type),
+        extendedProps: { type: e.type, is_recurring: e.is_recurring, raw: e.raw }
       }));
       setEvents(parsedEvents);
     } catch (err) {
@@ -72,6 +80,8 @@ export default function CalendarView() {
     setSelectedDates(info);
     setTitle('');
     setDescription('');
+    setEventType('meeting');
+    setIsRecurring(false);
     setModalOpen(true);
   };
 
@@ -84,7 +94,6 @@ export default function CalendarView() {
         start_time: event.start.toISOString(),
         end_time: event.end ? event.end.toISOString() : event.start.toISOString()
       });
-      // Optionally show a subtle success toast here
     } catch (err) {
       info.revert();
       console.error(err);
@@ -122,14 +131,16 @@ export default function CalendarView() {
 
   const handleCreateEvent = async (e) => {
     e.preventDefault();
-    if (!activeProjectId || !title) return;
+    if (!title) return;
     try {
       await api.post('/calendar', {
-        project_id: activeProjectId,
+        project_id: activeProjectId || null,
         title,
         description,
+        event_type: eventType,
+        is_recurring: isRecurring,
         start_time: selectedDates.startStr,
-        end_time: selectedDates.endStr
+        end_time: selectedDates.endStr || selectedDates.startStr
       });
       setModalOpen(false);
       fetchEvents(activeProjectId);
@@ -315,39 +326,67 @@ export default function CalendarView() {
 
       {/* Event Creation Modal */}
       {modalOpen && (
-        <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="card" style={{ width: '400px', maxWidth: '90%' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
-              <h3 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Create Event</h3>
-              <button onClick={() => setModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}><X size={20} /></button>
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="bg-[#18181b] w-full max-w-md rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-white/10">
+              <h3 className="font-semibold text-lg text-white">Create Schedule Event</h3>
+              <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/5"><X size={18} /></button>
             </div>
             
-            <form onSubmit={handleCreateEvent} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.25rem' }}>Event Title</label>
+            <form onSubmit={handleCreateEvent} className="p-4 flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-gray-300">Event Title *</label>
                 <input 
                   type="text" 
+                  autoFocus
                   value={title}
                   onChange={e => setTitle(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', outline: 'none' }}
-                  placeholder="Design Review Meeting"
+                  className="w-full p-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-sm outline-none focus:ring-2 focus:ring-primary"
+                  placeholder="e.g. Firmware Sprint Review"
                   required
                 />
               </div>
               
-              <div>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 500, marginBottom: '0.25rem' }}>Description</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-medium text-gray-300">Event Type</label>
+                  <select 
+                    value={eventType}
+                    onChange={e => setEventType(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-white/10 bg-[#27272a] text-white text-xs outline-none"
+                  >
+                    <option value="meeting">Meeting (Indigo)</option>
+                    <option value="deadline">Deadline (Red)</option>
+                    <option value="milestone">Milestone (Amber)</option>
+                  </select>
+                </div>
+                <div className="flex flex-col justify-end">
+                  <label className="flex items-center gap-2 text-xs font-medium text-gray-300 cursor-pointer p-2.5 rounded-xl border border-white/10 bg-white/5">
+                    <input 
+                      type="checkbox"
+                      checked={isRecurring}
+                      onChange={e => setIsRecurring(e.target.checked)}
+                      className="rounded text-primary focus:ring-primary"
+                    />
+                    <span>Weekly Sync</span>
+                  </label>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-gray-300">Description</label>
                 <textarea 
                   value={description}
                   onChange={e => setDescription(e.target.value)}
-                  style={{ width: '100%', padding: '0.75rem', borderRadius: '4px', border: '1px solid var(--border-color)', outline: 'none', resize: 'vertical', minHeight: '80px' }}
-                  placeholder="Optional details..."
+                  className="w-full p-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-xs outline-none resize-none"
+                  placeholder="Optional details, meeting link..."
+                  rows={3}
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
-                <button type="button" onClick={() => setModalOpen(false)} className="btn" style={{ flex: 1, backgroundColor: 'var(--bg-tertiary)' }}>Cancel</button>
-                <button type="submit" className="btn btn-primary" style={{ flex: 1 }}>Save Event</button>
+              <div className="flex justify-end gap-3 mt-2">
+                <button type="button" onClick={() => setModalOpen(false)} className="px-4 py-2 rounded-xl text-xs font-medium text-gray-400 hover:bg-white/5">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-white hover:bg-primary/90 shadow-sm">Save Event</button>
               </div>
             </form>
           </div>

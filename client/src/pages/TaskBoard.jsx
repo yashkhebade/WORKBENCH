@@ -12,6 +12,7 @@ import { toast } from '../components/ui/toast';
 import { TaskTimer } from '../components/ui/TaskComponents';
 import { useProjects } from '../contexts/ProjectContext';
 import TaskDetailModal from '../components/ui/TaskDetailModal';
+import PriorityLegend from '../components/ui/PriorityLegend';
 import { X } from 'lucide-react';
 
 const COLUMNS = [
@@ -174,7 +175,8 @@ const CreateTaskModal = ({ statusId, projectId, onClose, onSubmit }) => {
     title: '',
     description: '',
     category: 'Hardware',
-    priority: 'Medium'
+    priority: 'Medium',
+    due_date: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -187,42 +189,42 @@ const CreateTaskModal = ({ statusId, projectId, onClose, onSubmit }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="bg-background w-full max-w-md rounded-xl shadow-2xl border border-border flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center p-4 border-b border-border">
-          <h3 className="font-semibold text-lg">Create New Task</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+      <div className="bg-[#18181b] w-full max-w-md rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden">
+        <div className="flex justify-between items-center p-4 border-b border-white/10">
+          <h3 className="font-semibold text-lg text-white">Create New Task</h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/5">
             <X size={18} />
           </button>
         </div>
         <form onSubmit={handleSubmit} className="p-4 flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Task Title *</label>
+            <label className="text-xs font-medium text-gray-300">Task Title *</label>
             <input 
               required autoFocus
               value={formData.title} 
               onChange={e => setFormData({...formData, title: e.target.value})} 
-              className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none" 
+              className="w-full p-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-sm focus:ring-2 focus:ring-primary outline-none" 
               placeholder="e.g. Design v2 PCB layout" 
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium">Description</label>
+            <label className="text-xs font-medium text-gray-300">Description</label>
             <textarea 
               value={formData.description} 
               onChange={e => setFormData({...formData, description: e.target.value})} 
-              className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none" 
-              placeholder="Add details, links, or notes..." 
+              className="w-full p-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-gray-500 text-sm focus:ring-2 focus:ring-primary outline-none" 
+              placeholder="Add details, specs, links..." 
               rows={3} 
             />
           </div>
-          <div className="flex gap-4">
-            <div className="flex flex-col gap-1.5 flex-1">
-              <label className="text-sm font-medium">Category</label>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-gray-300">Category</label>
               <select 
                 value={formData.category} 
                 onChange={e => setFormData({...formData, category: e.target.value})} 
-                className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none"
+                className="w-full p-2.5 rounded-xl border border-white/10 bg-[#27272a] text-white text-xs outline-none"
               >
                 <option value="Hardware">Hardware</option>
                 <option value="Firmware">Firmware</option>
@@ -232,12 +234,12 @@ const CreateTaskModal = ({ statusId, projectId, onClose, onSubmit }) => {
                 <option value="Other">Other</option>
               </select>
             </div>
-            <div className="flex flex-col gap-1.5 flex-1">
-              <label className="text-sm font-medium">Priority</label>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-gray-300">Priority</label>
               <select 
                 value={formData.priority} 
                 onChange={e => setFormData({...formData, priority: e.target.value})} 
-                className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none"
+                className="w-full p-2.5 rounded-xl border border-white/10 bg-[#27272a] text-white text-xs outline-none"
               >
                 <option value="Low">Low</option>
                 <option value="Medium">Medium</option>
@@ -245,9 +247,18 @@ const CreateTaskModal = ({ statusId, projectId, onClose, onSubmit }) => {
               </select>
             </div>
           </div>
-          <div className="flex justify-end gap-3 mt-4">
-            <button type="button" onClick={onClose} className="px-4 py-2 rounded-md font-medium hover:bg-muted text-muted-foreground transition-colors">Cancel</button>
-            <button type="submit" disabled={isSubmitting} className="px-4 py-2 rounded-md font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50">
+          <div className="flex flex-col gap-1.5">
+            <label className="text-xs font-medium text-gray-300">Due Date</label>
+            <input 
+              type="date"
+              value={formData.due_date}
+              onChange={e => setFormData({...formData, due_date: e.target.value})}
+              className="w-full p-2.5 rounded-xl border border-white/10 bg-[#27272a] text-white text-xs outline-none"
+            />
+          </div>
+          <div className="flex justify-end gap-3 mt-2">
+            <button type="button" onClick={onClose} className="px-4 py-2 rounded-xl text-xs font-medium hover:bg-white/5 text-gray-400 transition-colors">Cancel</button>
+            <button type="submit" disabled={isSubmitting} className="px-4 py-2 rounded-xl text-xs font-semibold bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm disabled:opacity-50">
               {isSubmitting ? 'Creating...' : 'Create Task'}
             </button>
           </div>
@@ -431,6 +442,10 @@ export default function TaskBoard() {
               <option value="Unassigned">Unassigned</option>
               {uniqueAssignees.map(a => <option key={a} value={a}>{a}</option>)}
             </select>
+          </div>
+
+          <div className="ml-auto hidden xl:block">
+            <PriorityLegend />
           </div>
         </div>
       </div>

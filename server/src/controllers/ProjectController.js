@@ -24,13 +24,32 @@ exports.getById = async (req, res) => {
 exports.create = async (req, res) => {
     try {
         const { name, description, subject_id } = req.body;
-        if (!name) return res.status(400).json({ error: 'Name is required' });
-        const result = await Project.create({ name, description, subject_id });
+        if (!name || !name.trim()) return res.status(400).json({ error: 'Project name is required' });
+        
+        const { get } = require('../config/db');
+        const existing = await get('SELECT id FROM projects WHERE LOWER(name) = LOWER($1)', [name.trim()]);
+        if (existing) {
+            return res.status(400).json({ error: 'A project with this name already exists' });
+        }
+
+        const result = await Project.create({ name: name.trim(), description, subject_id });
         if (req.user) {
             await Project.addMember(result.lastID, req.user.id, 'owner');
         }
         res.status(201).json({ message: 'Project created', id: result.lastID });
     } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
+
+exports.archive = async (req, res) => {
+    try {
+        const { run } = require('../config/db');
+        await run('UPDATE projects SET archived = true WHERE id = $1', [req.params.id]);
+        res.json({ message: 'Project archived successfully' });
+    } catch (err) {
+        console.error(err);
         res.status(500).json({ error: 'Internal server error' });
     }
 };

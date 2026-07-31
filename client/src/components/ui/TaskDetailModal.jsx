@@ -35,6 +35,44 @@ function OverviewTab({ task, onUpdate }) {
   });
   const [saving, setSaving] = useState(false);
 
+  // Task Comments State
+  const [comments, setComments] = useState([]);
+  const [newComment, setNewComment] = useState('');
+  const [loadingComments, setLoadingComments] = useState(false);
+  const [submittingComment, setSubmittingComment] = useState(false);
+
+  const fetchComments = useCallback(async () => {
+    try {
+      setLoadingComments(true);
+      const res = await api.get(`/tasks/${task.id}/comments`);
+      setComments(res.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingComments(false);
+    }
+  }, [task.id]);
+
+  useEffect(() => {
+    fetchComments();
+  }, [fetchComments]);
+
+  const handleAddComment = async (e) => {
+    e.preventDefault();
+    if (!newComment.trim()) return;
+    setSubmittingComment(true);
+    try {
+      await api.post(`/tasks/${task.id}/comments`, { comment: newComment.trim() });
+      setNewComment('');
+      fetchComments();
+      toast.add({ title: 'Comment Posted', type: 'success' });
+    } catch (err) {
+      toast.add({ title: 'Failed to post comment', type: 'error' });
+    } finally {
+      setSubmittingComment(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -50,19 +88,19 @@ function OverviewTab({ task, onUpdate }) {
   };
 
   return (
-    <div className="flex flex-col gap-5 p-6 overflow-y-auto flex-1">
+    <div className="flex flex-col gap-5 p-6 overflow-y-auto flex-1 bg-[#18181b] text-white">
       {/* Title */}
       <div className="flex items-start justify-between gap-3">
         {editing ? (
           <input autoFocus value={form.title}
             onChange={e => setForm(f => ({ ...f, title: e.target.value }))}
-            className="text-xl font-bold bg-muted rounded-md px-3 py-1.5 flex-1 outline-none focus:ring-2 focus:ring-primary border border-border"
+            className="text-lg font-bold bg-white/5 rounded-xl px-3 py-1.5 flex-1 outline-none focus:ring-2 focus:ring-primary border border-white/10 text-white"
           />
         ) : (
-          <h2 className="text-xl font-bold text-foreground flex-1">{form.title}</h2>
+          <h2 className="text-xl font-bold text-white flex-1">{form.title}</h2>
         )}
         <button onClick={() => editing ? handleSave() : setEditing(true)} disabled={saving}
-          className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-md bg-muted hover:bg-accent transition-colors shrink-0">
+          className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors shrink-0 cursor-pointer">
           {saving ? <Loader2 size={13} className="animate-spin" /> : editing ? <Save size={13} /> : <Edit3 size={13} />}
           {saving ? 'Saving…' : editing ? 'Save' : 'Edit'}
         </button>
@@ -72,33 +110,33 @@ function OverviewTab({ task, onUpdate }) {
       <div className="flex flex-wrap gap-2">
         {editing ? (
           <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value }))}
-            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted border border-border outline-none">
+            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#27272a] text-white border border-white/10 outline-none">
             {['To Do','In Progress','Review','Done'].map(s => <option key={s}>{s}</option>)}
           </select>
         ) : (
-          <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full', STATUS_COLORS[form.status] || 'bg-muted text-muted-foreground')}>{form.status}</span>
+          <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full', STATUS_COLORS[form.status] || 'bg-white/10 text-gray-300')}>{form.status}</span>
         )}
         {editing ? (
           <select value={form.priority} onChange={e => setForm(f => ({ ...f, priority: e.target.value }))}
-            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-muted border border-border outline-none">
+            className="text-xs font-semibold px-2.5 py-1 rounded-full bg-[#27272a] text-white border border-white/10 outline-none">
             {['High','Medium','Low'].map(p => <option key={p}>{p}</option>)}
           </select>
         ) : (
-          <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full border', PRIORITY[form.priority]?.color || 'bg-muted')}>
+          <span className={cn('text-xs font-semibold px-2.5 py-1 rounded-full border', PRIORITY[form.priority]?.color || 'bg-white/10')}>
             <span className={cn('inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle', PRIORITY[form.priority]?.dot)} />
             {form.priority}
           </span>
         )}
         {editing ? (
           <input type="date" value={form.due_date} onChange={e => setForm(f => ({ ...f, due_date: e.target.value }))}
-            className="text-xs px-2.5 py-1 rounded-full bg-muted border border-border outline-none" />
+            className="text-xs px-2.5 py-1 rounded-full bg-[#27272a] text-white border border-white/10 outline-none" />
         ) : (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2.5 py-1 rounded-full bg-muted">
+          <span className="flex items-center gap-1 text-xs text-gray-300 px-2.5 py-1 rounded-full bg-white/5 border border-white/5">
             <Calendar size={11} /> {form.due_date ? new Date(form.due_date).toLocaleDateString() : 'No date'}
           </span>
         )}
         {task.assignee_name && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2.5 py-1 rounded-full bg-muted">
+          <span className="flex items-center gap-1 text-xs text-gray-300 px-2.5 py-1 rounded-full bg-white/5 border border-white/5">
             <User size={11} /> {task.assignee_name}
           </span>
         )}
@@ -106,24 +144,66 @@ function OverviewTab({ task, onUpdate }) {
 
       {/* Description */}
       <div className="flex flex-col gap-1.5">
-        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Description</label>
+        <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">Description</label>
         {editing ? (
           <textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
-            rows={5} placeholder="Add a description…"
-            className="w-full p-3 rounded-lg bg-muted border border-border text-sm resize-none outline-none focus:ring-2 focus:ring-primary" />
+            rows={4} placeholder="Add a description…"
+            className="w-full p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-white resize-none outline-none focus:ring-2 focus:ring-primary" />
         ) : (
-          <p className="text-sm text-foreground/80 whitespace-pre-wrap bg-muted/40 rounded-lg p-3 min-h-[72px] border border-border/50">
-            {form.description || <span className="text-muted-foreground italic">No description.</span>}
+          <p className="text-xs text-gray-300 whitespace-pre-wrap bg-white/5 rounded-xl p-3 min-h-[60px] border border-white/5 leading-relaxed">
+            {form.description || <span className="text-gray-500 italic">No description provided.</span>}
           </p>
         )}
       </div>
 
-      {/* Timer */}
-      <div className="rounded-xl border border-border bg-muted/30 p-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+      {/* Time Tracking */}
+      <div className="rounded-xl border border-white/10 bg-white/5 p-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-3 flex items-center gap-1.5">
           <Clock size={12} /> Time Tracking
         </p>
         <TaskTimer task={task} onTimerUpdate={onUpdate} />
+      </div>
+
+      {/* Comments Thread */}
+      <div className="flex flex-col gap-3 pt-2">
+        <label className="text-xs font-semibold uppercase tracking-wider text-gray-400">Activity & Comments</label>
+        
+        {/* Comment Form */}
+        <form onSubmit={handleAddComment} className="flex gap-2">
+          <input 
+            type="text" 
+            value={newComment}
+            onChange={e => setNewComment(e.target.value)}
+            placeholder="Write a comment or mention @teammate..."
+            className="flex-1 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-white placeholder-gray-500 text-xs outline-none focus:ring-2 focus:ring-primary"
+          />
+          <button
+            type="submit"
+            disabled={submittingComment || !newComment.trim()}
+            className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-semibold hover:bg-primary/90 transition-all disabled:opacity-50 cursor-pointer shrink-0"
+          >
+            Comment
+          </button>
+        </form>
+
+        {/* Comments List */}
+        <div className="flex flex-col gap-2 mt-1">
+          {loadingComments ? (
+            <div className="text-center py-4 text-xs text-gray-500">Loading comments...</div>
+          ) : comments.length === 0 ? (
+            <div className="text-center py-4 text-xs text-gray-500 italic">No comments yet. Start the discussion!</div>
+          ) : (
+            comments.map(c => (
+              <div key={c.id} className="p-3 rounded-xl bg-white/5 border border-white/5 flex flex-col gap-1">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-white">{c.user_name}</span>
+                  <span className="text-[10px] text-gray-500">{new Date(c.created_at).toLocaleString()}</span>
+                </div>
+                <p className="text-xs text-gray-300 m-0 leading-relaxed">{c.comment}</p>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );
