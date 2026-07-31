@@ -56,7 +56,7 @@ const SortableTask = memo(({ task, isOverlay, onOpen, dragJustHappenedRef }) => 
       {...listeners}
       onClick={handleClick}
       className={cn(
-        "group flex flex-col gap-2 p-3.5 mb-3 bg-white rounded-xl shadow-[0_1px_3px_rgba(0,0,0,0.05),0_1px_2px_rgba(0,0,0,0.03)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.05),0_8px_20px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 transition-all duration-200 cursor-pointer select-none",
+        "group flex flex-col gap-2 p-3.5 mb-3 bg-white/10 border border-white/5 rounded-xl shadow-sm hover:shadow-md hover:bg-white/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer select-none",
         isOverlay ? 'ring-2 ring-primary shadow-xl scale-105 rotate-2' : ''
       )}
       style={style}
@@ -370,14 +370,14 @@ export default function TaskBoard() {
               <div 
                 key={col.id} 
                 className={cn(
-                  "flex flex-col bg-[#F7F8FA] rounded-2xl border border-border-subtle shadow-[0_2px_10px_rgba(0,0,0,0.02)] transition-all duration-300 overflow-hidden min-h-[300px] xl:min-h-0",
+                  "flex flex-col bg-white/5 rounded-2xl border border-white/10 shadow-sm transition-all duration-300 overflow-hidden min-h-[300px] xl:min-h-0",
                   isCollapsed ? "opacity-75" : "w-full"
                 )}
               >
                 {/* Column Header */}
                 <button 
                   onClick={() => toggleColumn(col.id)}
-                  className="w-full px-4 py-3.5 flex justify-between items-center border-b border-border-subtle hover:bg-black/5 focus:outline-none min-h-[56px] text-left transition-colors group cursor-pointer"
+                  className="w-full px-4 py-3.5 flex justify-between items-center border-b border-white/10 hover:bg-white/5 focus:outline-none min-h-[56px] text-left transition-colors group cursor-pointer"
                   aria-expanded={!isCollapsed}
                   aria-label={`Toggle column ${col.label}`}
                 >
@@ -411,7 +411,7 @@ export default function TaskBoard() {
                   <div className="p-3 pt-4 flex-1 flex flex-col overflow-y-auto min-h-0">
                     <button 
                       onClick={(e) => { e.stopPropagation(); setCreatingTaskStatus(col.id); }}
-                      className="w-full py-2 mb-3 rounded-xl border border-dashed border-border-subtle bg-transparent text-text-secondary hover:text-accent-liquid-blue hover:border-accent-liquid-blue hover:bg-indigo-50/50 cursor-pointer flex items-center justify-center gap-2 text-[0.9rem] font-medium transition-all focus:outline-none group"
+                      className="w-full py-2 mb-3 rounded-xl border border-dashed border-white/20 bg-transparent text-gray-400 hover:text-primary hover:border-primary hover:bg-primary/10 cursor-pointer flex items-center justify-center gap-2 text-[0.9rem] font-medium transition-all focus:outline-none group"
                       aria-label={`Add task to ${col.label}`}
                     >
                       <Plus size={16} className="opacity-70 group-hover:opacity-100" />
@@ -425,10 +425,10 @@ export default function TaskBoard() {
                         ))}
                         {colTasks.length === 0 && (
                           <div className="flex flex-col items-center justify-center py-10 opacity-60">
-                            <div className="w-12 h-12 rounded-full bg-border-subtle/50 flex items-center justify-center mb-3">
-                              <div className="w-4 h-4 rounded-full border-2 border-dashed border-text-tertiary" />
+                            <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center mb-3">
+                              <div className="w-4 h-4 rounded-full border-2 border-dashed border-gray-400" />
                             </div>
-                            <p className="text-xs font-medium text-text-secondary">No tasks yet</p>
+                            <p className="text-xs font-medium text-gray-400">No tasks yet</p>
                           </div>
                         )}
                       </div>
