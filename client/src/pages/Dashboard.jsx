@@ -228,17 +228,41 @@ export default function Dashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [serverWaking, setServerWaking] = useState(false);
 
   const fetchDashboardData = useCallback(async () => {
-    try {
-      setError(null);
-      const res = await api.get('/dashboard');
-      setData(res.data);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to load dashboard data.');
-    } finally {
-      setLoading(false);
+    setError(null);
+    setLoading(true);
+    let retries = 12; // ~60s patience for Render cold starts
+    let delay = 5000;
+    while (retries > 0) {
+      try {
+        const res = await api.get('/dashboard');
+        setData(res.data);
+        setServerWaking(false);
+        setLoading(false);
+        return;
+      } catch (err) {
+        if (err.response) {
+          // Server responded with an error (auth, etc) - don't retry
+          console.error('Dashboard fetch error:', err);
+          setError('Failed to load dashboard data.');
+          setLoading(false);
+          setServerWaking(false);
+          return;
+        }
+        // Network error (server sleeping on Render)
+        retries -= 1;
+        if (retries === 0) {
+          setError('Could not reach the server after 60 seconds.');
+          setLoading(false);
+          setServerWaking(false);
+        } else {
+          setServerWaking(true);
+          setLoading(false);
+          await new Promise(r => setTimeout(r, delay));
+        }
+      }
     }
   }, []);
 
@@ -293,12 +317,37 @@ export default function Dashboard() {
     });
   }, []);
 
-  if (!loading && !data) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (serverWaking) {
+    return (
+      <div className="flex items-center justify-center h-[50vh]">
+        <div className="glass-panel text-center p-8 bg-[#18181b] border border-white/10 rounded-2xl flex flex-col items-center gap-4 max-w-sm">
+          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <div>
+            <h2 className="text-lg font-semibold text-white mb-1">⏳ Server is waking up...</h2>
+            <p className="text-gray-400 text-sm">Render's free server was sleeping. It takes <strong className="text-white">30–60 seconds</strong> to boot. Retrying automatically...</p>
+          </div>
+          <div className="w-48 bg-white/5 rounded-full h-1.5 overflow-hidden">
+            <div className="h-full bg-primary rounded-full animate-pulse w-2/3" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || error) {
     return (
       <div className="flex items-center justify-center h-[50vh]">
         <div className="glass-panel text-center p-8 bg-[#18181b] border border-white/10 rounded-2xl">
           <h2 className="text-xl font-semibold mb-2 text-white">Error Loading Dashboard</h2>
-          <p className="text-gray-400 mb-4 text-sm">There was a problem connecting to the server.</p>
+          <p className="text-gray-400 mb-4 text-sm">{error || 'There was a problem connecting to the server.'}</p>
           <button className="px-4 py-2 bg-primary text-white rounded-xl text-xs font-medium" onClick={fetchDashboardData}>Try Again</button>
         </div>
       </div>

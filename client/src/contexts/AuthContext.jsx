@@ -30,8 +30,11 @@ export const AuthProvider = ({ children }) => {
         if (storedToken) {
           setToken(storedToken);
           
-          let retries = 5;
-          let delay = 2000;
+          // Show server-waking UI immediately for better UX
+          setWakingServer(true);
+
+          let retries = 12; // ~60 seconds total - Render cold starts can take up to 50s
+          let delay = 5000;
           
           while (retries > 0) {
             try {
@@ -47,15 +50,13 @@ export const AuthProvider = ({ children }) => {
                 setWakingServer(false);
                 break;
               } else {
-                // Network error, 502, 503, or timeout (Server is asleep/waking up)
-                setWakingServer(true);
+                // Network error, 502, 503, or timeout (Server is asleep/waking up on Render free tier)
                 retries -= 1;
                 if (retries === 0) {
                   setWakingServer(false);
-                  // We don't remove the token, just stop trying so they can manually refresh later
+                  // Don't remove the token - let the user manually retry
                 } else {
                   await new Promise(r => setTimeout(r, delay));
-                  delay += 2000; // Exponential-ish backoff
                 }
               }
             }
@@ -87,7 +88,10 @@ export const AuthProvider = ({ children }) => {
 
   const signup = async (email, password) => {
     if (hasSupabaseConfig()) {
-      const { data, error } = await supabase.auth.signUp({ email, password });
+      // Pass the production site URL so verification emails redirect to the live app,
+      // not localhost. window.location.origin works for both Vercel and local dev.
+      const redirectTo = `${window.location.origin}/login`;
+      const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
       if (error) throw error;
       return data;
     }
@@ -105,15 +109,24 @@ export const AuthProvider = ({ children }) => {
 
   if (loading || wakingServer) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-        <h2 className="text-xl font-bold text-foreground">
-          {wakingServer ? 'Waking up the server...' : 'Loading workspace...'}
-        </h2>
+      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4 gap-6">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-14 h-14 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <div className="text-center">
+            <h2 className="text-xl font-bold text-white">
+              {wakingServer ? '⏳ Server is waking up...' : 'Loading workspace...'}
+            </h2>
+            {wakingServer && (
+              <p className="text-gray-400 mt-2 text-sm max-w-sm">
+                The Render free server went to sleep. It takes <strong className="text-white">30–60 seconds</strong> to boot. Please wait — do not refresh.
+              </p>
+            )}
+          </div>
+        </div>
         {wakingServer && (
-          <p className="text-muted-foreground mt-2 text-center max-w-sm">
-            The free Render server went to sleep. It usually takes 30-50 seconds to wake up. Hang tight!
-          </p>
+          <div className="w-64 bg-white/5 rounded-full h-1.5 overflow-hidden">
+            <div className="h-full bg-primary rounded-full animate-pulse w-1/3" />
+          </div>
         )}
       </div>
     );
