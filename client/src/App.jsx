@@ -86,7 +86,7 @@ const AnimatedRoutes = () => {
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+    <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
       <TooltipProvider>
         <AuthProvider>
           <SocketProvider>
