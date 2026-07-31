@@ -9,15 +9,28 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
 
+  const [subjects, setSubjects] = useState([]);
   const [projects, setProjects] = useState([]);
   const [showProjectModal, setShowProjectModal] = useState(false);
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
-  const [newProject, setNewProject] = useState({ name: '', description: '', parent_project_id: '' });
+  const [newProject, setNewProject] = useState({ name: '', description: '', subject_id: '' });
+  const [newSubject, setNewSubject] = useState({ name: '' });
   const [newMember, setNewMember] = useState({ project_id: '', user_id: '' });
 
   useEffect(() => {
+    fetchSubjects();
     fetchProjects();
   }, []);
+
+  const fetchSubjects = async () => {
+    try {
+      const res = await api.get('/subjects');
+      setSubjects(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const fetchProjects = async () => {
     try {
@@ -33,11 +46,24 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
     try {
       await api.post('/projects', newProject);
       setShowProjectModal(false);
-      setNewProject({ name: '', description: '', parent_project_id: '' });
+      setNewProject({ name: '', description: '', subject_id: '' });
       fetchProjects();
       toast.add({ title: 'Success', description: 'Project created', type: 'success' });
     } catch (err) {
       toast.add({ title: 'Error', description: 'Failed to create project', type: 'error' });
+    }
+  };
+
+  const handleCreateSubject = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/subjects', newSubject);
+      setShowSubjectModal(false);
+      setNewSubject({ name: '' });
+      fetchSubjects();
+      toast.add({ title: 'Success', description: 'Subject created', type: 'success' });
+    } catch (err) {
+      toast.add({ title: 'Error', description: 'Failed to create subject', type: 'error' });
     }
   };
 
@@ -56,8 +82,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
   if (!isOpen) return null;
 
-  // Filter top-level projects vs sub-projects
-  const topLevelProjects = projects.filter(p => !p.parent_project_id);
+  if (!isOpen) return null;
 
   return (
     <aside 
@@ -78,9 +103,13 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
               <LayoutDashboard size={20} strokeWidth={2.25} className="shrink-0" />
               <span className="hidden lg:block">Dashboard</span>
             </Link>
+            <Link to="/timeline" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] relative overflow-hidden", isActive('/timeline') ? "bg-indigo-50/80 text-accent-liquid-blue before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-accent-liquid-blue before:rounded-r-md px-4" : "text-text-secondary hover:bg-bg-subtle hover:text-text-primary px-4", "md:justify-center lg:justify-start")}>
+              <KanbanSquare size={20} strokeWidth={2.25} className="shrink-0" />
+              <span className="hidden lg:block">Timeline View</span>
+            </Link>
             <Link to="/board" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] relative overflow-hidden", isActive('/board') ? "bg-indigo-50/80 text-accent-liquid-blue before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-accent-liquid-blue before:rounded-r-md px-4" : "text-text-secondary hover:bg-bg-subtle hover:text-text-primary px-4", "md:justify-center lg:justify-start")}>
               <KanbanSquare size={20} strokeWidth={2.25} className="shrink-0" />
-              <span className="hidden lg:block">Board</span>
+              <span className="hidden lg:block">Task Board</span>
             </Link>
             <Link to="/calendar" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] relative overflow-hidden", isActive('/calendar') ? "bg-indigo-50/80 text-accent-liquid-blue before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-accent-liquid-blue before:rounded-r-md px-4" : "text-text-secondary hover:bg-bg-subtle hover:text-text-primary px-4", "md:justify-center lg:justify-start")}>
               <CalendarDays size={20} strokeWidth={2.25} className="shrink-0" />
@@ -93,30 +122,47 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
           </nav>
         </div>
 
-        {/* Projects */}
+        {/* Subjects & Projects */}
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-center px-3 mb-1 hidden lg:flex">
-            <h4 className="text-[11px] uppercase tracking-wider text-text-secondary font-bold">Projects</h4>
-            <button onClick={() => setShowProjectModal(true)} className="text-text-secondary hover:text-accent-liquid-blue transition-colors p-1 rounded-md hover:bg-indigo-50">
-              <Plus size={16} strokeWidth={2.5} />
-            </button>
+            <h4 className="text-[11px] uppercase tracking-wider text-text-secondary font-bold">Subjects</h4>
+            <div className="flex gap-1">
+              <button onClick={() => setShowSubjectModal(true)} title="New Subject" className="text-text-secondary hover:text-accent-liquid-blue transition-colors p-1 rounded-md hover:bg-indigo-50">
+                <Plus size={14} strokeWidth={2.5} />
+              </button>
+              <button onClick={() => setShowProjectModal(true)} title="New Project" className="text-text-secondary hover:text-emerald-500 transition-colors p-1 rounded-md hover:bg-emerald-50">
+                <Plus size={14} strokeWidth={2.5} />
+              </button>
+            </div>
           </div>
           <nav className="flex flex-col gap-1.5">
-            {topLevelProjects.map(p => (
-              <div key={p.id} className="flex flex-col">
-                <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-text-secondary hover:bg-bg-subtle hover:text-text-primary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] md:justify-center lg:justify-start">
-                  <FolderOpen size={20} strokeWidth={2.25} className="shrink-0" />
-                  <span className="hidden lg:block text-sm truncate">{p.name}</span>
+            {subjects.map(subject => (
+              <div key={subject.id} className="flex flex-col">
+                <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-text-primary hover:bg-bg-subtle transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] md:justify-center lg:justify-start">
+                  <FolderOpen size={20} strokeWidth={2.25} className="shrink-0 text-accent-liquid-blue" />
+                  <span className="hidden lg:block text-sm truncate">{subject.name}</span>
                 </button>
-                {/* Sub-projects */}
-                {projects.filter(sub => sub.parent_project_id === p.id).map(sub => (
-                  <button key={sub.id} className="flex items-center gap-3 px-4 py-2 ml-4 rounded-xl font-medium text-text-secondary hover:bg-bg-subtle hover:text-text-primary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[36px] md:hidden lg:flex">
+                {/* Projects in this subject */}
+                {projects.filter(p => p.subject_id === subject.id).map(p => (
+                  <Link to={`/timeline?project_id=${p.id}`} key={p.id} className="flex items-center gap-3 px-4 py-2 ml-4 rounded-xl font-medium text-text-secondary hover:bg-bg-subtle hover:text-text-primary transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[36px] md:hidden lg:flex">
                     <div className="w-1.5 h-1.5 rounded-full bg-text-secondary shrink-0 ml-1 opacity-50" />
-                    <span className="text-xs truncate">{sub.name}</span>
-                  </button>
+                    <span className="text-xs truncate">{p.name}</span>
+                  </Link>
                 ))}
               </div>
             ))}
+            {/* Uncategorized projects */}
+            {projects.filter(p => !p.subject_id).length > 0 && (
+              <div className="flex flex-col mt-2">
+                <div className="px-4 py-1 hidden lg:block text-xs font-medium text-text-secondary/60">Other Projects</div>
+                {projects.filter(p => !p.subject_id).map(p => (
+                  <Link to={`/timeline?project_id=${p.id}`} key={p.id} className="flex items-center gap-3 px-4 py-2 rounded-xl font-medium text-text-secondary hover:bg-bg-subtle hover:text-text-primary transition-all duration-200 md:hidden lg:flex">
+                    <FolderOpen size={16} strokeWidth={2.25} className="shrink-0" />
+                    <span className="text-xs truncate">{p.name}</span>
+                  </Link>
+                ))}
+              </div>
+            )}
           </nav>
         </div>
 
@@ -157,15 +203,39 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                 <textarea value={newProject.description} onChange={e => setNewProject({...newProject, description: e.target.value})} className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none" placeholder="Optional details..." rows={3} />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-sm font-medium">Parent Project (Optional)</label>
-                <select value={newProject.parent_project_id} onChange={e => setNewProject({...newProject, parent_project_id: e.target.value})} className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none">
-                  <option value="">None (Top Level)</option>
-                  {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                <label className="text-sm font-medium">Subject</label>
+                <select value={newProject.subject_id} onChange={e => setNewProject({...newProject, subject_id: e.target.value})} className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none">
+                  <option value="">None (Uncategorized)</option>
+                  {subjects.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
                 </select>
               </div>
               <div className="flex justify-end gap-3 mt-4">
                 <button type="button" onClick={() => setShowProjectModal(false)} className="px-4 py-2 rounded-md font-medium hover:bg-muted text-muted-foreground transition-colors">Cancel</button>
                 <button type="submit" className="px-4 py-2 rounded-md font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm">Create Project</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Subject Modal */}
+      {showSubjectModal && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-background w-full max-w-md rounded-xl shadow-2xl border border-border flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex justify-between items-center p-4 border-b border-border">
+              <h3 className="font-semibold text-lg">New Subject</h3>
+              <button onClick={() => setShowSubjectModal(false)} className="text-muted-foreground hover:text-foreground p-1 rounded-md hover:bg-muted">
+                <X size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleCreateSubject} className="p-4 flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium">Subject Name</label>
+                <input required value={newSubject.name} onChange={e => setNewSubject({...newSubject, name: e.target.value})} className="w-full p-2.5 rounded-md border border-border bg-background focus:ring-2 focus:ring-primary outline-none" placeholder="e.g. ECEN 403" />
+              </div>
+              <div className="flex justify-end gap-3 mt-4">
+                <button type="button" onClick={() => setShowSubjectModal(false)} className="px-4 py-2 rounded-md font-medium hover:bg-muted text-muted-foreground transition-colors">Cancel</button>
+                <button type="submit" className="px-4 py-2 rounded-md font-medium bg-primary text-primary-foreground hover:bg-primary/90 transition-colors shadow-sm">Create Subject</button>
               </div>
             </form>
           </div>

@@ -23,9 +23,9 @@ exports.getById = async (req, res) => {
 
 exports.create = async (req, res) => {
     try {
-        const { name, description, status, parent_project_id } = req.body;
+        const { name, description, subject_id } = req.body;
         if (!name) return res.status(400).json({ error: 'Name is required' });
-        const result = await Project.create({ name, description, status, parent_project_id });
+        const result = await Project.create({ name, description, subject_id });
         if (req.user) {
             await Project.addMember(result.lastID, req.user.id, 'owner');
         }

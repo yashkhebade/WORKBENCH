@@ -13,6 +13,8 @@ const calendarRoutes = require('./routes/calendarRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const noteRoutes = require('./routes/noteRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const subjectRoutes = require('./routes/subjectRoutes');
+const timelineRoutes = require('./routes/timelineRoutes');
 
 // Fail fast if critical secrets aren't configured — no silent fallback secrets.
 if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
@@ -54,6 +56,8 @@ app.use('/api/calendar', calendarRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/notes', noteRoutes);
 app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/subjects', subjectRoutes);
+app.use('/api/timeline', timelineRoutes);
 
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', time: new Date() });

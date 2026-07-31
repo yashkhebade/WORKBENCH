@@ -19,10 +19,10 @@ class Project {
         `, [userId]);
     }
 
-    static async create({ name, description, status = 'Draft', parent_project_id = null }) {
+    static async create({ name, description, subject_id, status = 'Draft', workflow_state = 'Ideation', workflow_steps = null }) {
         return run(
-            'INSERT INTO projects (name, description, status, parent_project_id) VALUES (?, ?, ?, ?) RETURNING id',
-            [name, description, status, parent_project_id]
+            'INSERT INTO projects (name, description, subject_id, status, workflow_state, workflow_steps) VALUES (?, ?, ?, ?, ?, ?) RETURNING *',
+            [name, description, subject_id || null, status, workflow_state, workflow_steps ? JSON.stringify(workflow_steps) : null]
         );
     }
 

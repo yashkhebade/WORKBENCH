@@ -53,11 +53,11 @@ class FileModel {
         return all('SELECT * FROM file_versions WHERE file_id = ? ORDER BY version_number DESC', [fileId]);
     }
 
-    static async createFileWithVersion({ project_id, uploader_id, name, description, file_path, task_id, category }) {
+    static async createFileWithVersion({ project_id, uploader_id, name, description, file_path, task_id, category, filetype, size, tags }) {
         // Insert logical file
         const fileRes = await run(
-            'INSERT INTO files (project_id, uploader_id, name, description, task_id, category) VALUES (?, ?, ?, ?, ?, ?) RETURNING id',
-            [project_id, uploader_id, name, description, task_id || null, category || 'other']
+            'INSERT INTO files (project_id, uploader_id, name, description, task_id, category, filetype, size, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING id',
+            [project_id, uploader_id, name, description, task_id || null, category || 'other', filetype, size, tags || null]
         );
         const fileId = fileRes.id;
 
@@ -78,6 +78,12 @@ class FileModel {
             [file_id, nextVersion, file_path]
         );
         return nextVersion;
+    }
+    static async create({ project_id, uploader_id, name, description, file_path, filetype, size, tags }) {
+        return run(
+            'INSERT INTO files (project_id, uploader_id, name, description, file_path, filetype, size, tags) VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *',
+            [project_id, uploader_id, name, description, file_path, filetype, size, tags || null]
+        );
     }
 }
 

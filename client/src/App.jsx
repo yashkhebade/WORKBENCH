@@ -20,6 +20,7 @@ const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Landing = lazy(() => import('./pages/marketing/Landing'));
 const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword'));
+const Timeline = lazy(() => import('./pages/Timeline'));
 
 const FallbackLoader = () => (
   <div className="flex items-center justify-center h-screen w-full bg-background">
@@ -47,6 +48,13 @@ const AnimatedRoutes = () => {
           <ProtectedRoute>
             <Layout>
               <PageWrapper><Dashboard /></PageWrapper>
+            </Layout>
+          </ProtectedRoute>
+        } />
+        <Route path="/timeline" element={
+          <ProtectedRoute>
+            <Layout>
+              <PageWrapper><Timeline /></PageWrapper>
             </Layout>
           </ProtectedRoute>
         } />

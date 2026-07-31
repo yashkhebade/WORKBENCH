@@ -14,6 +14,15 @@ exports.uploadFile = async (req, res) => {
         const description = req.body.description || '';
         const taskId = req.body.task_id || null;
         const category = req.body.category || 'other';
+        const tags = req.body.tags || '';
+
+        const mimeType = req.file.mimetype;
+        let filetype = 'other';
+        if (mimeType.startsWith('image/')) filetype = 'image';
+        else if (mimeType.startsWith('video/')) filetype = 'video';
+        else if (mimeType.includes('pdf')) filetype = 'pdf';
+        else if (mimeType.includes('text/') || mimeType.includes('json') || mimeType.includes('javascript')) filetype = 'code';
+        else if (mimeType.includes('word') || mimeType.includes('document')) filetype = 'document';
 
         // Check if file exists in project
         const existingFile = await FileModel.findByNameAndProject(filename, projectId);
@@ -35,7 +44,10 @@ exports.uploadFile = async (req, res) => {
                 description,
                 file_path: filePath,
                 task_id: taskId,
-                category
+                category,
+                filetype,
+                size: req.file.size,
+                tags
             });
             try { getIo().emit('file:uploaded', { name: filename, version: 1, category, task_id: taskId }); } catch(e) {}
             res.status(201).json({ message: 'File uploaded' });
