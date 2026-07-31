@@ -46,18 +46,10 @@ export default defineConfig({
     }
   },
   build: {
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('@fullcalendar')) return 'calendar';
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) return 'vendor';
-            if (id.includes('@dnd-kit')) return 'dndkit';
-            if (id.includes('lucide') || id.includes('date-fns') || id.includes('clsx')) return 'ui';
-            return 'vendor';
-          }
-        }
+        // Removed manualChunks because it causes "e is not a function" crash in production for fullcalendar
       }
     }
   },
