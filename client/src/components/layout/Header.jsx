@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { Menu, ChevronDown, Bell, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useProjects } from '../../contexts/ProjectContext';
 
 export default function Header({ toggleSidebar }) {
@@ -42,20 +42,20 @@ export default function Header({ toggleSidebar }) {
       </div>
 
       <nav className="hidden lg:flex gap-6 items-center">
-        <Link to="/" className="text-text-secondary hover:text-text-primary hover:bg-bg-subtle font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue rounded-md px-3 py-1.5">Dashboard</Link>
-        <Link to="/board" className="text-text-secondary hover:text-text-primary hover:bg-bg-subtle font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue rounded-md px-3 py-1.5">Board</Link>
-        <Link to="/calendar" className="text-text-secondary hover:text-text-primary hover:bg-bg-subtle font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue rounded-md px-3 py-1.5">Calendar</Link>
-        <Link to="/notes" className="text-text-secondary hover:text-text-primary hover:bg-bg-subtle font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue rounded-md px-3 py-1.5">Notes</Link>
+        <NavLink to="/" className={({ isActive }) => `font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-3 py-1.5 ${isActive ? 'text-white bg-white/10 shadow-[0_2px_10px_rgba(255,255,255,0.05)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>Dashboard</NavLink>
+        <NavLink to="/board" className={({ isActive }) => `font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-3 py-1.5 ${isActive ? 'text-white bg-white/10 shadow-[0_2px_10px_rgba(255,255,255,0.05)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>Board</NavLink>
+        <NavLink to="/calendar" className={({ isActive }) => `font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-3 py-1.5 ${isActive ? 'text-white bg-white/10 shadow-[0_2px_10px_rgba(255,255,255,0.05)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>Calendar</NavLink>
+        <NavLink to="/notes" className={({ isActive }) => `font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary rounded-md px-3 py-1.5 ${isActive ? 'text-white bg-white/10 shadow-[0_2px_10px_rgba(255,255,255,0.05)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}>Notes</NavLink>
       </nav>
 
-      <div className="flex items-center gap-2 md:gap-4">
-        <button className="p-2 text-text-secondary hover:bg-bg-subtle hover:text-text-primary rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] min-w-[44px] flex items-center justify-center relative">
+      <div className="flex items-center gap-4 md:gap-6 ml-4">
+        <button className="p-2 text-text-secondary hover:bg-bg-subtle hover:text-white rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] min-w-[44px] flex items-center justify-center relative">
           <Bell size={20} strokeWidth={2.25} />
-          <span className="absolute top-2.5 right-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+          <span className="absolute top-2.5 right-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-background"></span>
           <span className="sr-only">Notifications</span>
         </button>
         <div 
-          className="flex items-center gap-3 p-1 md:p-2 md:-mr-2 rounded-xl hover:bg-bg-subtle cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-accent-liquid-blue"
+          className="flex items-center gap-3 p-1 md:p-2 md:-mr-2 rounded-xl hover:bg-white/5 cursor-pointer transition-colors focus-within:ring-2 focus-within:ring-primary"
           onClick={logout}
           tabIndex={0}
           role="button"
@@ -65,8 +65,8 @@ export default function Header({ toggleSidebar }) {
             <User size={20} strokeWidth={2.25} className="text-indigo-600" />
           </div>
           <div className="hidden md:flex flex-col">
-            <span className="text-sm font-semibold leading-tight text-text-primary">{user?.name || 'User'}</span>
-            <span className="text-xs text-text-secondary leading-tight">{user?.role || 'Member'}</span>
+            <span className="text-sm font-semibold leading-tight text-white">{user?.name || 'User'}</span>
+            <span className="text-xs text-gray-400 leading-tight">{user?.role || 'Member'}</span>
           </div>
         </div>
       </div>

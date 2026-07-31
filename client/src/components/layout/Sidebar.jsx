@@ -97,25 +97,25 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
       <div className="flex flex-col gap-8 px-4 lg:px-6">
         {/* Quick Access */}
         <div className="flex flex-col gap-2">
-          <h4 className="hidden lg:block text-[11px] uppercase tracking-wider text-text-secondary font-bold px-3 mb-1">Quick Access</h4>
+          <h4 className="hidden lg:block text-[11px] uppercase tracking-wider text-gray-400 font-bold px-3 mb-1">Quick Access</h4>
           <nav className="flex flex-col gap-1.5">
-            <Link to="/" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] relative overflow-hidden", isActive('/') ? "bg-indigo-50/80 text-accent-liquid-blue before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-accent-liquid-blue before:rounded-r-md px-4" : "text-text-secondary hover:bg-bg-subtle hover:text-text-primary px-4", "md:justify-center lg:justify-start")}>
+            <Link to="/" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] relative overflow-hidden", isActive('/') ? "bg-white/10 text-white before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-primary before:rounded-r-md px-4" : "text-gray-400 hover:bg-white/5 hover:text-white px-4", "md:justify-center lg:justify-start")}>
               <LayoutDashboard size={20} strokeWidth={2.25} className="shrink-0" />
               <span className="hidden lg:block">Dashboard</span>
             </Link>
-            <Link to="/timeline" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] relative overflow-hidden", isActive('/timeline') ? "bg-indigo-50/80 text-accent-liquid-blue before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-accent-liquid-blue before:rounded-r-md px-4" : "text-text-secondary hover:bg-bg-subtle hover:text-text-primary px-4", "md:justify-center lg:justify-start")}>
+            <Link to="/timeline" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] relative overflow-hidden", isActive('/timeline') ? "bg-white/10 text-white before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-primary before:rounded-r-md px-4" : "text-gray-400 hover:bg-white/5 hover:text-white px-4", "md:justify-center lg:justify-start")}>
               <KanbanSquare size={20} strokeWidth={2.25} className="shrink-0" />
               <span className="hidden lg:block">Timeline View</span>
             </Link>
-            <Link to="/board" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] relative overflow-hidden", isActive('/board') ? "bg-indigo-50/80 text-accent-liquid-blue before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-accent-liquid-blue before:rounded-r-md px-4" : "text-text-secondary hover:bg-bg-subtle hover:text-text-primary px-4", "md:justify-center lg:justify-start")}>
+            <Link to="/board" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] relative overflow-hidden", isActive('/board') ? "bg-white/10 text-white before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-primary before:rounded-r-md px-4" : "text-gray-400 hover:bg-white/5 hover:text-white px-4", "md:justify-center lg:justify-start")}>
               <KanbanSquare size={20} strokeWidth={2.25} className="shrink-0" />
               <span className="hidden lg:block">Task Board</span>
             </Link>
-            <Link to="/calendar" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] relative overflow-hidden", isActive('/calendar') ? "bg-indigo-50/80 text-accent-liquid-blue before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-accent-liquid-blue before:rounded-r-md px-4" : "text-text-secondary hover:bg-bg-subtle hover:text-text-primary px-4", "md:justify-center lg:justify-start")}>
+            <Link to="/calendar" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] relative overflow-hidden", isActive('/calendar') ? "bg-white/10 text-white before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-primary before:rounded-r-md px-4" : "text-gray-400 hover:bg-white/5 hover:text-white px-4", "md:justify-center lg:justify-start")}>
               <CalendarDays size={20} strokeWidth={2.25} className="shrink-0" />
               <span className="hidden lg:block">Calendar</span>
             </Link>
-            <Link to="/notes" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] relative overflow-hidden", isActive('/notes') ? "bg-indigo-50/80 text-accent-liquid-blue before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-accent-liquid-blue before:rounded-r-md px-4" : "text-text-secondary hover:bg-bg-subtle hover:text-text-primary px-4", "md:justify-center lg:justify-start")}>
+            <Link to="/notes" className={cn("flex items-center gap-3 py-2.5 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] relative overflow-hidden", isActive('/notes') ? "bg-white/10 text-white before:absolute before:left-0 before:top-1 before:bottom-1 before:w-1 before:bg-primary before:rounded-r-md px-4" : "text-gray-400 hover:bg-white/5 hover:text-white px-4", "md:justify-center lg:justify-start")}>
               <BookOpen size={20} strokeWidth={2.25} className="shrink-0" />
               <span className="hidden lg:block">Notes</span>
             </Link>
@@ -125,21 +125,16 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
         {/* Subjects & Projects */}
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-center px-3 mb-1 hidden lg:flex">
-            <h4 className="text-[11px] uppercase tracking-wider text-text-secondary font-bold">Subjects</h4>
-            <div className="flex gap-1">
-              <button onClick={() => setShowSubjectModal(true)} title="New Subject" className="text-text-secondary hover:text-accent-liquid-blue transition-colors p-1 rounded-md hover:bg-indigo-50">
-                <Plus size={14} strokeWidth={2.5} />
-              </button>
-              <button onClick={() => setShowProjectModal(true)} title="New Project" className="text-text-secondary hover:text-emerald-500 transition-colors p-1 rounded-md hover:bg-emerald-50">
-                <Plus size={14} strokeWidth={2.5} />
-              </button>
-            </div>
+            <h4 className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">Subjects</h4>
+            <button onClick={() => setShowProjectModal(true)} title="New Project" className="text-gray-400 hover:text-white transition-colors p-1 rounded-md hover:bg-white/5">
+              <Plus size={14} strokeWidth={2.5} />
+            </button>
           </div>
           <nav className="flex flex-col gap-1.5">
             {subjects.map(subject => (
               <div key={subject.id} className="flex flex-col">
-                <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-text-primary hover:bg-bg-subtle transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent-liquid-blue min-h-[44px] md:justify-center lg:justify-start">
-                  <FolderOpen size={20} strokeWidth={2.25} className="shrink-0 text-accent-liquid-blue" />
+                <button className="flex items-center gap-3 px-4 py-2.5 rounded-xl font-medium text-white hover:bg-white/5 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary min-h-[44px] md:justify-center lg:justify-start">
+                  <FolderOpen size={20} strokeWidth={2.25} className="shrink-0 text-primary" />
                   <span className="hidden lg:block text-sm truncate">{subject.name}</span>
                 </button>
                 {/* Projects in this subject */}
@@ -169,8 +164,8 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
         {/* Team */}
         <div className="flex flex-col gap-2">
           <div className="flex justify-between items-center px-3 mb-1 hidden lg:flex">
-            <h4 className="text-[11px] uppercase tracking-wider text-text-secondary font-bold">Team</h4>
-            <button onClick={() => setShowMemberModal(true)} className="text-text-secondary hover:text-accent-liquid-blue transition-colors p-1 rounded-md hover:bg-indigo-50">
+            <h4 className="text-[11px] uppercase tracking-wider text-gray-400 font-bold">Team</h4>
+            <button onClick={() => setShowMemberModal(true)} className="text-gray-400 hover:text-white transition-colors p-1 rounded-md hover:bg-white/5">
               <Plus size={16} strokeWidth={2.5} />
             </button>
           </div>

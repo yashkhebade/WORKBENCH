@@ -102,7 +102,7 @@ function WorkflowStepper({ activeProject, onStateChanged }) {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
         <h3 className="font-semibold text-text-primary flex items-center gap-1.5">
-          <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-accent-liquid-blue shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
             <Activity size={18} strokeWidth={2.25} />
           </div>
           {isEditing ? 'Editing Workflow:' : 'Active Project Workflow:'}{' '}
@@ -125,7 +125,7 @@ function WorkflowStepper({ activeProject, onStateChanged }) {
               <button
                 onClick={saveSteps}
                 disabled={isSaving}
-                className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-md text-white bg-zinc-900 hover:scale-105 hover:shadow-[0_0_15px_rgba(56,189,248,0.3)] transition-all disabled:opacity-70 disabled:hover:scale-100 disabled:hover:shadow-none"
+                className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-md text-white bg-white/10 hover:bg-white/20 hover:shadow-lg transition-all disabled:opacity-70"
               >
                 {isSaving ? 'Saving…' : '✓ Save Workflow'}
               </button>
@@ -193,21 +193,21 @@ function WorkflowStepper({ activeProject, onStateChanged }) {
                 >
                   <div
                     className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm border-2 transition-all duration-300
-                      ${isActive ? 'bg-[var(--color-primary)] border-[var(--color-primary)] text-white scale-110 ring-4 ring-indigo-500/20 shadow-[0_0_15px_rgba(79,70,229,0.3)]'
+                      ${isActive ? 'bg-primary border-primary text-white scale-110 ring-4 ring-primary/20 shadow-[0_0_15px_rgba(37,99,235,0.3)]'
                       : isCompleted ? 'bg-[var(--status-done)] border-[var(--status-done)] text-white'
-                      : 'bg-white border-border-subtle text-text-secondary hover:border-accent-liquid-blue hover:scale-105'
+                      : 'bg-bg-subtle border-border-subtle text-text-secondary hover:border-primary hover:scale-105'
                     }`}
                   >
                     {isCompleted ? <Check size={18} strokeWidth={3} /> : index + 1}
                   </div>
-                  <span className={`mt-3 text-xs font-medium whitespace-nowrap transition-colors ${isActive ? 'text-accent-liquid-blue font-bold' : 'text-text-secondary'}`}>
+                  <span className={`mt-3 text-xs font-medium whitespace-nowrap transition-colors ${isActive ? 'text-white font-bold' : 'text-text-secondary'}`}>
                     {state}
                   </span>
                 </div>
                 {index < steps.length - 1 && (
                   <div className="w-16 h-1 mx-2 rounded-full bg-border-subtle overflow-hidden shrink-0 -translate-y-3 relative">
                     <div
-                      className="absolute inset-0 bg-gradient-to-r from-accent-liquid-blue to-transparent transition-all duration-500 ease-in-out"
+                      className="absolute inset-0 bg-gradient-to-r from-primary to-transparent transition-all duration-500 ease-in-out"
                       style={{ width: isCompleted ? '100%' : '0%' }}
                     />
                   </div>
@@ -297,7 +297,7 @@ export default function Dashboard() {
           {trendUp ? <TrendingUp size={12} strokeWidth={3} /> : <TrendingDown size={12} strokeWidth={3} />} {trend}
         </div>
       </div>
-      <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-accent-liquid-blue mb-4">
+      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-4">
         <Icon size={20} strokeWidth={2.25} />
       </div>
       <div>
@@ -343,8 +343,8 @@ export default function Dashboard() {
       {/* Page Header */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-text-primary mb-1">Dashboard</h1>
-          <p className="text-text-secondary text-sm font-medium">Welcome back, {user?.name}!</p>
+          <h1 className="text-2xl font-bold tracking-tight text-white mb-1">Dashboard</h1>
+          <p className="text-text-secondary text-sm font-medium">Welcome back, <span className="text-white">{user?.name}</span>!</p>
         </div>
       </div>
 
@@ -385,8 +385,8 @@ export default function Dashboard() {
           
           {/* Active Projects */}
           <div className="glass-panel p-6">
-            <h3 className="font-semibold text-text-primary flex items-center gap-1.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-accent-liquid-blue shrink-0">
+            <h3 className="font-semibold text-white flex items-center gap-1.5 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <FolderOpen size={18} strokeWidth={2.25} />
               </div>
               Active Projects
@@ -395,10 +395,10 @@ export default function Dashboard() {
               {loading ? <SkeletonCard height="60px" /> : data.activeProjects.map(p => {
                 const progress = p.total_tasks > 0 ? (p.completed_tasks / p.total_tasks) * 100 : 0;
                 return (
-                  <div key={p.id} className="flex flex-col gap-2 p-4 rounded-xl border border-border-subtle bg-white/40">
+                  <div key={p.id} className="flex flex-col gap-2 p-4 rounded-xl border border-border-subtle bg-white/5 hover:bg-white/10 transition-colors">
                     <div className="flex justify-between items-center">
-                      <span className="font-semibold text-text-primary">{p.name}</span>
-                      <span className="text-sm font-medium text-text-secondary">{p.completed_tasks} / {p.total_tasks} Tasks</span>
+                      <span className="font-semibold text-white">{p.name}</span>
+                      <span className="text-sm font-medium text-gray-400">{p.completed_tasks} / {p.total_tasks} Tasks</span>
                     </div>
                     <div className="w-full h-1.5 bg-border-subtle rounded-full overflow-hidden">
                       <div className="h-full bg-accent-liquid-blue transition-all duration-500" style={{ width: `${progress}%` }} />
@@ -420,18 +420,18 @@ export default function Dashboard() {
 
           {/* My Tasks */}
           <div className="glass-panel p-6">
-            <h3 className="font-semibold text-text-primary flex items-center gap-1.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-accent-liquid-blue shrink-0">
+            <h3 className="font-semibold text-white flex items-center gap-1.5 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <CheckCircle size={18} strokeWidth={2.25} />
               </div>
               My Tasks
             </h3>
             <div className="flex flex-col gap-2">
               {loading ? <SkeletonCard height="80px" /> : data.myTasks.map(t => (
-                <div key={t.id} className="flex justify-between items-center p-3 border-b border-border-subtle last:border-0">
+                <div key={t.id} className="flex justify-between items-center p-3 border-b border-border-subtle hover:bg-white/5 transition-colors last:border-0">
                   <div className="flex flex-col">
-                    <span className="font-medium text-text-primary">{t.title}</span>
-                    <span className="text-xs font-medium text-text-secondary mt-0.5">Due: {t.due_date ? new Date(t.due_date).toLocaleDateString() : 'None'}</span>
+                    <span className="font-medium text-white">{t.title}</span>
+                    <span className="text-xs font-medium text-gray-400 mt-0.5">Due: {t.due_date ? new Date(t.due_date).toLocaleDateString() : 'None'}</span>
                   </div>
                   <span className={`text-xs px-2.5 py-1 rounded-full font-bold tracking-wide ${t.priority === 'High' ? 'bg-red-50 text-red-600' : 'bg-bg-subtle text-text-secondary'}`}>
                     {t.priority}
@@ -457,19 +457,19 @@ export default function Dashboard() {
           
           {/* Upcoming Deadlines */}
           <div className="glass-panel p-6">
-            <h3 className="font-semibold text-text-primary flex items-center gap-1.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-accent-liquid-blue shrink-0">
+            <h3 className="font-semibold text-white flex items-center gap-1.5 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <Calendar size={18} strokeWidth={2.25} />
               </div>
               Upcoming Deadlines
             </h3>
             <div className="flex flex-col gap-2">
               {loading ? <SkeletonCard height="60px" /> : data.deadlines.map((d, i) => (
-                <div key={i} className="flex gap-3 items-center py-2">
-                  <div className={`w-1 h-8 rounded-full ${d.type === 'task' ? 'bg-accent-liquid-blue' : 'bg-amber-400'}`} />
+                <div key={i} className="flex gap-3 items-center p-3 hover:bg-white/5 rounded-lg transition-colors">
+                  <div className={`w-1 h-8 rounded-full ${d.type === 'task' ? 'bg-primary' : 'bg-amber-400'}`} />
                   <div className="flex flex-col">
-                    <span className="text-sm font-medium text-text-primary">{d.title}</span>
-                    <span className="text-xs font-medium text-text-secondary mt-0.5">{new Date(d.date).toLocaleDateString()}</span>
+                    <span className="text-sm font-medium text-white">{d.title}</span>
+                    <span className="text-xs font-medium text-gray-400 mt-0.5">{new Date(d.date).toLocaleDateString()}</span>
                   </div>
                 </div>
               ))}
@@ -484,20 +484,20 @@ export default function Dashboard() {
 
           {/* Recent Files */}
           <div className="glass-panel p-6">
-            <h3 className="font-semibold text-text-primary flex items-center gap-1.5 mb-4">
-              <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-accent-liquid-blue shrink-0">
+            <h3 className="font-semibold text-white flex items-center gap-1.5 mb-4">
+              <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
                 <FileText size={18} strokeWidth={2.25} />
               </div>
               Recent Files
             </h3>
             <div className="flex flex-col gap-3">
               {loading ? <SkeletonCard height="60px" /> : data.recentFiles.map((f, i) => (
-                <div key={i} className="flex justify-between items-center py-2">
+                <div key={i} className="flex justify-between items-center p-3 hover:bg-white/5 rounded-lg transition-colors">
                   <div className="flex flex-col max-w-[70%]">
-                    <span className="text-sm font-medium text-text-primary truncate">{f.name}</span>
-                    <span className="text-xs font-medium text-text-secondary mt-0.5">by {f.uploader_name || 'System'}</span>
+                    <span className="text-sm font-medium text-white truncate">{f.name}</span>
+                    <span className="text-xs font-medium text-gray-400 mt-0.5">by {f.uploader_name || 'System'}</span>
                   </div>
-                  <span className="text-xs font-bold bg-bg-subtle text-text-secondary px-2 py-0.5 rounded-full">v{f.version_number}</span>
+                  <span className="text-xs font-bold bg-white/10 text-gray-300 px-2 py-0.5 rounded-full">v{f.version_number}</span>
                 </div>
               ))}
               {!loading && data.recentFiles.length === 0 && (
@@ -514,21 +514,21 @@ export default function Dashboard() {
 
       {/* Activity Feed Bottom Section */}
       <div className="glass-panel p-6">
-        <h3 className="font-semibold text-text-primary flex items-center gap-1.5 mb-4">
-          <div className="w-8 h-8 rounded-lg bg-indigo-50 flex items-center justify-center text-accent-liquid-blue shrink-0">
+        <h3 className="font-semibold text-white flex items-center gap-1.5 mb-4">
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
             <Activity size={18} strokeWidth={2.25} />
           </div>
           Activity Timeline
         </h3>
         <div className="flex flex-col gap-3">
           {loading ? <SkeletonCard height="40px" /> : data.activity.map((a, i) => (
-            <div key={i} className={`flex items-center gap-4 py-2 ${i !== data.activity.length - 1 ? 'border-b border-border-subtle' : ''}`}>
-              <div className="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-xs font-bold text-accent-liquid-blue shrink-0">
+            <div key={i} className={`flex items-center gap-4 p-3 hover:bg-white/5 rounded-lg transition-colors ${i !== data.activity.length - 1 ? 'border-b border-border-subtle' : ''}`}>
+              <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                 {a.user_name ? a.user_name.charAt(0).toUpperCase() : '?'}
               </div>
               <div className="flex flex-col flex-1">
-                <span className="text-sm text-text-primary"><b className="font-semibold text-text-primary">{a.user_name || 'Someone'}</b> {a.action.toLowerCase()}: {a.name}</span>
-                <span className="text-xs font-medium text-text-secondary mt-0.5">{new Date(a.time).toLocaleString()}</span>
+                <span className="text-sm text-gray-300"><b className="font-semibold text-white">{a.user_name || 'Someone'}</b> {a.action.toLowerCase()}: {a.name}</span>
+                <span className="text-xs font-medium text-gray-500 mt-0.5">{new Date(a.time).toLocaleString()}</span>
               </div>
             </div>
           ))}
