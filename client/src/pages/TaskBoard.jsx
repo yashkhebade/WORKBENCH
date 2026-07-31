@@ -314,20 +314,20 @@ export default function TaskBoard() {
           <select 
             value={activeProjectId} 
             onChange={(e) => setActiveProjectId(e.target.value)}
-            className="px-3 py-2 min-h-[44px] rounded-lg border border-border-subtle bg-white text-text-primary font-medium outline-none focus:ring-2 focus:ring-accent-liquid-blue shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex-1 sm:flex-none cursor-pointer transition-shadow"
+            className="px-3 py-2 min-h-[44px] rounded-lg border border-white/10 bg-white/5 text-white font-medium outline-none focus:ring-2 focus:ring-primary shadow-sm flex-1 sm:flex-none cursor-pointer transition-shadow"
             aria-label="Select Project"
           >
             {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
           </select>
           
           <div className="relative flex-1 sm:flex-none sm:min-w-[200px] group">
-            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary group-focus-within:text-accent-liquid-blue transition-colors" />
+            <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" />
             <input 
               type="text" 
               placeholder="Search tasks..." 
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 min-h-[44px] rounded-lg border border-border-subtle outline-none text-sm focus:ring-2 focus:ring-accent-liquid-blue focus:border-accent-liquid-blue bg-white shadow-[0_1px_2px_rgba(0,0,0,0.02)] transition-shadow"
+              className="w-full pl-9 pr-3 py-2 min-h-[44px] rounded-lg border border-white/10 outline-none text-sm focus:ring-2 focus:ring-primary focus:border-primary bg-white/5 text-white placeholder-gray-500 shadow-sm transition-shadow"
               aria-label="Search Tasks"
             />
           </div>
@@ -337,7 +337,7 @@ export default function TaskBoard() {
             <select 
               value={filterPriority} 
               onChange={e => setFilterPriority(e.target.value)} 
-              className="px-3 py-2 min-h-[44px] rounded-lg border border-border-subtle bg-white text-text-secondary outline-none text-sm focus:ring-2 focus:ring-accent-liquid-blue shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex-1 sm:flex-none cursor-pointer transition-shadow"
+              className="px-3 py-2 min-h-[44px] rounded-lg border border-white/10 bg-white/5 text-white outline-none text-sm focus:ring-2 focus:ring-primary shadow-sm flex-1 sm:flex-none cursor-pointer transition-shadow"
               aria-label="Filter by Priority"
             >
               <option value="All">All Priorities</option>
@@ -348,7 +348,7 @@ export default function TaskBoard() {
             <select 
               value={filterAssignee} 
               onChange={e => setFilterAssignee(e.target.value)} 
-              className="px-3 py-2 min-h-[44px] rounded-lg border border-border-subtle bg-white text-text-secondary outline-none text-sm focus:ring-2 focus:ring-accent-liquid-blue shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex-1 sm:flex-none cursor-pointer transition-shadow"
+              className="px-3 py-2 min-h-[44px] rounded-lg border border-white/10 bg-white/5 text-white outline-none text-sm focus:ring-2 focus:ring-primary shadow-sm flex-1 sm:flex-none cursor-pointer transition-shadow"
               aria-label="Filter by Assignee"
             >
               <option value="All">All Assignees</option>
