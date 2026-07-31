@@ -65,16 +65,14 @@ export const AuthProvider = ({ children }) => {
     setUser(res.data.user);
   };
 
-  const signup = async (email, password) => {
-    if (hasSupabaseConfig()) {
-      // Pass the production site URL so verification emails redirect to the live app,
-      // not localhost. window.location.origin works for both Vercel and local dev.
-      const redirectTo = `${window.location.origin}/login`;
-      const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: redirectTo } });
-      if (error) throw error;
-      return data;
-    }
-    throw new Error('Supabase is not configured yet. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your .env file.');
+  const signup = async (name, email, password) => {
+    // Always register through the custom backend (PostgreSQL).
+    // This creates the account AND returns a JWT token so the user is logged in immediately.
+    const res = await api.post('/auth/register', { name, email, password });
+    localStorage.setItem('token', res.data.token);
+    setToken(res.data.token);
+    setUser(res.data.user);
+    return res.data;
   };
 
   const logout = async () => {

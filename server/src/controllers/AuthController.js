@@ -1,9 +1,40 @@
 const User = require('../models/User');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { get } = require('../config/db');
 
 // In-memory store for reset codes. In production, this would be in Redis or the DB.
 const resetCodes = new Map();
+
+exports.register = async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        if (!name || !email || !password) {
+            return res.status(400).json({ error: 'Name, email and password are required' });
+        }
+        if (password.length < 4) {
+            return res.status(400).json({ error: 'Password must be at least 4 characters' });
+        }
+        const existing = await User.findByEmail(email);
+        if (existing) {
+            return res.status(400).json({ error: 'An account with this email already exists' });
+        }
+        await User.create({ name, email, password, role: 'Member' });
+        const user = await User.findByEmail(email);
+        const token = jwt.sign(
+            { id: user.id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '30d' }
+        );
+        res.status(201).json({
+            token,
+            user: { id: user.id, name: user.name, email: user.email, role: user.role }
+        });
+    } catch (err) {
+        console.error('Register error:', err);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+};
 
 exports.login = async (req, res) => {
     try {
