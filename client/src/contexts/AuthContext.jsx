@@ -30,10 +30,16 @@ export const AuthProvider = ({ children }) => {
           setToken(storedToken);
           try {
             const res = await api.get('/auth/me');
-            setUser(res.data.user);
+            setUser(res.data);
           } catch (err) {
-            localStorage.removeItem('token');
-            setToken(null);
+            // ONLY remove token if the server specifically rejects it (401/403).
+            // If the server is just asleep (502, timeout, network error), DO NOT log them out.
+            if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+              localStorage.removeItem('token');
+              setToken(null);
+            }
+            // If it's a network error/timeout, we leave the token in localStorage 
+            // so they don't have to sign in again when the server wakes up.
           }
         }
       }
