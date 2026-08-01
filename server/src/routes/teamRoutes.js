@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const teamController = require('../controllers/TeamController');
-const { authMiddleware } = require('../middlewares/auth');
+const { authenticate } = require('../middlewares/auth');
 
-router.use(authMiddleware);
+router.use(authenticate);
 
 router.get('/members', teamController.getTeamMembers);
 router.post('/invite', teamController.inviteMember);
