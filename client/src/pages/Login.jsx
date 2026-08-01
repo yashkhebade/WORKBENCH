@@ -140,8 +140,9 @@ export default function Login() {
       } else {
         localStorage.removeItem('rememberedEmail');
       }
-    } catch {
-      setError('Invalid email or password. Please try again.');
+    } catch (err) {
+      const msg = err.response?.data?.error || (err.response ? 'Invalid email or password. Please try again.' : 'Unable to connect to server. Please try again.');
+      setError(msg);
     } finally {
       setIsLoading(false);
     }
