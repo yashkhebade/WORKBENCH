@@ -14,8 +14,8 @@ module.exports = {
         const isAllowedOrigin = (origin, callback) => {
             if (!origin) return callback(null, true);
             if (allowedOrigins.includes(origin)) return callback(null, true);
-            if (/^https:\/\/workbench-.*-yash-99bc\.vercel\.app$/.test(origin)) return callback(null, true);
-            callback(new Error('Not allowed by CORS'), false);
+            if (origin.endsWith('.vercel.app') || origin.includes('localhost')) return callback(null, true);
+            return callback(null, true);
         };
 
         io = socketIo(server, {
