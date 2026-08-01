@@ -312,19 +312,23 @@ export default function TaskBoard() {
   const handleCreateTaskSubmit = useCallback(async (taskData) => {
     if (!activeProjectId) return;
     
+    const finalTaskData = { ...taskData };
+    if (!finalTaskData.due_date) {
+      finalTaskData.due_date = null;
+    }
+
     // Optimistic UI
     const tempId = 'temp-' + Date.now();
     const newTask = {
       id: tempId,
-      ...taskData,
+      ...finalTaskData,
       assignee_name: user?.name,
-      due_date: null
     };
     setTasks(prev => [...prev, newTask]);
     setCreatingTaskStatus(null);
 
     try {
-      await api.post('/tasks', taskData);
+      await api.post('/tasks', finalTaskData);
       fetchTasks(activeProjectId);
       toast.add({ title: 'Task Created', description: 'Your task has been added successfully', type: 'success' });
     } catch (err) {

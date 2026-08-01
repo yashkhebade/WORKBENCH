@@ -14,23 +14,35 @@ exports.create = async (req, res) => {
     try {
         const { project_id, title } = req.body;
         if (!project_id || !title) return res.status(400).json({ error: 'Project ID and title are required' });
-        await Task.create(req.body);
+        
+        const taskData = { ...req.body };
+        if (taskData.due_date === '') {
+            taskData.due_date = null;
+        }
+
+        await Task.create(taskData);
         res.status(201).json({ message: 'Task created' });
     } catch (err) {
+        console.error("Task creation error:", err);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
 
 exports.update = async (req, res) => {
     try {
-        await Task.update(req.params.id, req.body);
+        const updates = { ...req.body };
+        if (updates.due_date === '') {
+            updates.due_date = null;
+        }
+        await Task.update(req.params.id, updates);
         
         try {
-            getIo().emit('task:updated', { taskId: req.params.id, updates: req.body });
+            getIo().emit('task:updated', { taskId: req.params.id, updates });
         } catch(e) {}
         
         res.json({ message: 'Task updated' });
     } catch (err) {
+        console.error("Task update error:", err);
         res.status(500).json({ error: 'Internal server error' });
     }
 };
