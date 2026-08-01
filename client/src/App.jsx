@@ -11,19 +11,53 @@ import { TooltipProvider } from './components/ui/tooltip';
 import { Toaster } from './components/ui/toast';
 import { Loader2 } from 'lucide-react';
 
-const Login = lazy(() => import('./pages/Login'));
-const Signup = lazy(() => import('./pages/Signup'));
-const TaskBoard = lazy(() => import('./pages/TaskBoard'));
-const CalendarView = lazy(() => import('./pages/CalendarView'));
-const NotesView = lazy(() => import('./pages/NotesView'));
-const Dashboard = lazy(() => import('./pages/Dashboard'));
-const Landing = lazy(() => import('./pages/marketing/Landing'));
-const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/ResetPassword'));
-const Timeline = lazy(() => import('./pages/Timeline'));
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import TaskBoard from './pages/TaskBoard';
+import CalendarView from './pages/CalendarView';
+import NotesView from './pages/NotesView';
+import Dashboard from './pages/Dashboard';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+import Timeline from './pages/Timeline';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('App ErrorBoundary caught an error:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-6 text-center">
+          <div className="bg-[#18181b] border border-white/10 p-8 rounded-2xl max-w-md w-full shadow-2xl flex flex-col items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center text-red-400 font-bold text-xl">
+              !
+            </div>
+            <h2 className="text-xl font-bold text-white">Something went wrong</h2>
+            <p className="text-gray-400 text-sm">The application encountered an unexpected error.</p>
+            <button
+              onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
+              className="mt-2 px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary/90 transition-all"
+            >
+              Reset Session & Reload
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const FallbackLoader = () => (
-  <div className="flex items-center justify-center h-screen w-full bg-background">
+  <div className="flex items-center justify-center h-screen w-full bg-[#09090b]">
     <Loader2 className="h-10 w-10 animate-spin text-primary" />
   </div>
 );
@@ -86,22 +120,24 @@ const AnimatedRoutes = () => {
 
 function App() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
-      <TooltipProvider>
-        <AuthProvider>
-          <SocketProvider>
-            <ProjectProvider>
-              <Router>
-                <Suspense fallback={<FallbackLoader />}>
-                  <AnimatedRoutes />
-                </Suspense>
-              </Router>
-            </ProjectProvider>
-          </SocketProvider>
-        </AuthProvider>
-        <Toaster />
-      </TooltipProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider attribute="class" defaultTheme="dark" disableTransitionOnChange>
+        <TooltipProvider>
+          <AuthProvider>
+            <SocketProvider>
+              <ProjectProvider>
+                <Router>
+                  <Suspense fallback={<FallbackLoader />}>
+                    <AnimatedRoutes />
+                  </Suspense>
+                </Router>
+              </ProjectProvider>
+            </SocketProvider>
+          </AuthProvider>
+          <Toaster />
+        </TooltipProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   );
 }
 

@@ -12,45 +12,28 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      // Always use the custom backend JWT auth.
-      // Supabase is only used for email verification during signup, not for sessions.
       const storedToken = localStorage.getItem('token');
       if (storedToken) {
         setToken(storedToken);
-        
-        // Show server-waking UI immediately for better UX
         setWakingServer(true);
 
-        let retries = 12;
-        let delay = 3000; // 3s between retries = ~36s total
-        
-        while (retries > 0) {
-          try {
-            const res = await api.get('/auth/me');
-            setUser(res.data);
-            setWakingServer(false);
-            break; // Success!
-          } catch (err) {
-            if (err.response && (err.response.status === 401 || err.response.status === 403)) {
-              // Invalid or expired token
-              localStorage.removeItem('token');
-              setToken(null);
-              setWakingServer(false);
-              break;
-            } else {
-              // Network error, 502, 503, or timeout (Server is asleep/waking up on Render free tier)
-              retries -= 1;
-              if (retries === 0) {
-                setWakingServer(false);
-                // Don't remove the token - let the user manually retry
-              } else {
-                await new Promise(r => setTimeout(r, delay));
-              }
-            }
+        try {
+          const res = await Promise.race([
+            api.get('/auth/me'),
+            new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 7000))
+          ]);
+          setUser(res.data);
+        } catch (err) {
+          if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+            localStorage.removeItem('token');
+            setToken(null);
+          } else {
+            console.warn('Backend reachability timeout or error during initAuth:', err);
           }
+        } finally {
+          setWakingServer(false);
         }
       }
-      
       setLoading(false);
     };
     initAuth();
