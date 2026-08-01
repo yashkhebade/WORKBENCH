@@ -13,6 +13,7 @@ import { TaskTimer } from '../components/ui/TaskComponents';
 import { useProjects } from '../contexts/ProjectContext';
 import TaskDetailModal from '../components/ui/TaskDetailModal';
 import PriorityLegend from '../components/ui/PriorityLegend';
+import WorkflowStepper from '../components/ui/WorkflowStepper';
 import { X } from 'lucide-react';
 
 const COLUMNS = [
@@ -271,7 +272,7 @@ const CreateTaskModal = ({ statusId, projectId, onClose, onSubmit }) => {
 export default function TaskBoard() {
   const { user } = useAuth();
   const { socket } = useSocket();
-  const { projects, activeProjectId, setActiveProjectId } = useProjects();
+  const { projects, activeProjectId, setActiveProjectId, fetchProjects } = useProjects();
   const [tasks, setTasks] = useState([]);
   const [collapsedCols, setCollapsedCols] = useState({});
   const [activeDragTask, setActiveDragTask] = useState(null);
@@ -449,6 +450,11 @@ export default function TaskBoard() {
           </div>
         </div>
       </div>
+
+      <WorkflowStepper 
+        activeProject={projects.find(p => String(p.id) === String(activeProjectId))}
+        onStateChanged={() => fetchProjects()}
+      />
 
       {/* Kanban Board */}
       <DndContext sensors={sensors} collisionDetection={closestCorners} onDragStart={onDragStart} onDragOver={onDragOver} onDragEnd={onDragEnd}>
