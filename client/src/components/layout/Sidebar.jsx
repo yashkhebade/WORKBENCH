@@ -95,10 +95,10 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
                     onClick={() => setActiveProjectId(p.id)}
                     className={cn(
                       "flex items-center gap-2.5 px-3 py-2 rounded-xl font-medium text-xs transition-all duration-200 md:justify-center lg:justify-start",
-                      isProjectActive ? "bg-primary text-white shadow-sm" : "text-gray-400 hover:bg-white/5 hover:text-white"
+                      isProjectActive ? "bg-white/10 text-white shadow-sm" : "text-gray-400 hover:bg-white/5 hover:text-white"
                     )}
                   >
-                    <FolderOpen size={16} strokeWidth={2} className={cn("shrink-0", isProjectActive ? "text-white" : "text-primary")} />
+                    <FolderOpen size={16} strokeWidth={2} className="shrink-0 text-primary" />
                     <span className="hidden lg:block truncate">{p.name}</span>
                   </Link>
                 );
