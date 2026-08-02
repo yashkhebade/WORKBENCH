@@ -38,11 +38,13 @@ const allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
 const isAllowedOrigin = (origin, callback) => {
     if (!origin) return callback(null, true); // Allow non-browser requests
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    if (origin.endsWith('.vercel.app') || origin.includes('localhost')) {
+    
+    // Strict regex for Vercel preview environments specifically for this app
+    if (/^https:\/\/workbench-.*\.vercel\.app$/.test(origin)) {
         return callback(null, true);
     }
-    // Fallback allow to avoid unexpected CORS blocks on Vercel preview/prod URLs
-    return callback(null, true);
+    
+    return callback(new Error('Origin not allowed by CORS'));
 };
 
 app.use(cors({

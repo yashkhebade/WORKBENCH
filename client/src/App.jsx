@@ -42,12 +42,20 @@ class ErrorBoundary extends React.Component {
             </div>
             <h2 className="text-xl font-bold text-white">Something went wrong</h2>
             <p className="text-gray-400 text-sm">The application encountered an unexpected error.</p>
-            <button
-              onClick={() => { localStorage.clear(); window.location.href = '/login'; }}
-              className="mt-2 px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary/90 transition-all"
-            >
-              Reset Session & Reload
-            </button>
+            <div className="flex gap-3 mt-2">
+              <button
+                onClick={() => { window.location.reload(); }}
+                className="px-6 py-2.5 bg-white/10 text-white rounded-xl text-xs font-semibold hover:bg-white/20 transition-all"
+              >
+                Reload Page
+              </button>
+              <button
+                onClick={() => { localStorage.removeItem('token'); window.location.href = '/login'; }}
+                className="px-6 py-2.5 bg-primary text-white rounded-xl text-xs font-semibold hover:bg-primary/90 transition-all"
+              >
+                Sign out & Reload
+              </button>
+            </div>
           </div>
         </div>
       );
@@ -62,7 +70,28 @@ const FallbackLoader = () => (
   </div>
 );
 const ProtectedRoute = ({ children }) => {
-  const { user } = useAuth();
+  const { user, loading, wakingServer } = useAuth();
+  
+  if (loading || wakingServer) {
+    return (
+      <div className="flex-1 p-6 flex flex-col gap-6 animate-pulse w-full max-w-[1440px] mx-auto mt-6">
+        {wakingServer && (
+          <div className="bg-primary/20 text-primary-foreground p-4 rounded-xl border border-primary/30 flex items-center gap-3 shadow-lg mb-4">
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <span className="font-semibold text-sm">Waking up Render backend (this takes ~30s)...</span>
+          </div>
+        )}
+        <div className="h-10 bg-white/5 rounded-xl w-1/4 mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="h-32 bg-white/5 rounded-2xl" />
+          <div className="h-32 bg-white/5 rounded-2xl" />
+          <div className="h-32 bg-white/5 rounded-2xl" />
+        </div>
+        <div className="h-64 bg-white/5 rounded-2xl mt-4" />
+      </div>
+    );
+  }
+  
   if (!user) return <Navigate to="/login" />;
   return children;
 };
@@ -78,40 +107,45 @@ const AnimatedRoutes = () => {
         <Route path="/forgot-password" element={<PageWrapper><ForgotPassword /></PageWrapper>} />
         <Route path="/reset-password" element={<PageWrapper><ResetPassword /></PageWrapper>} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        
         <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Layout>
+          <Layout>
+            <ProtectedRoute>
               <PageWrapper><Dashboard /></PageWrapper>
-            </Layout>
-          </ProtectedRoute>
+            </ProtectedRoute>
+          </Layout>
         } />
+        
         <Route path="/timeline" element={
-          <ProtectedRoute>
-            <Layout>
+          <Layout>
+            <ProtectedRoute>
               <PageWrapper><Timeline /></PageWrapper>
-            </Layout>
-          </ProtectedRoute>
+            </ProtectedRoute>
+          </Layout>
         } />
+        
         <Route path="/board" element={
-          <ProtectedRoute>
-            <Layout>
+          <Layout>
+            <ProtectedRoute>
               <PageWrapper><TaskBoard /></PageWrapper>
-            </Layout>
-          </ProtectedRoute>
+            </ProtectedRoute>
+          </Layout>
         } />
+        
         <Route path="/calendar" element={
-          <ProtectedRoute>
-            <Layout>
+          <Layout>
+            <ProtectedRoute>
               <PageWrapper><CalendarView /></PageWrapper>
-            </Layout>
-          </ProtectedRoute>
+            </ProtectedRoute>
+          </Layout>
         } />
+        
         <Route path="/notes" element={
-          <ProtectedRoute>
-            <Layout>
+          <Layout>
+            <ProtectedRoute>
               <PageWrapper><NotesView /></PageWrapper>
-            </Layout>
-          </ProtectedRoute>
+            </ProtectedRoute>
+          </Layout>
         } />
       </Routes>
     </AnimatePresence>

@@ -1,6 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import api from '../services/api';
-import { supabase, hasSupabaseConfig } from '../services/supabase';
 
 const AuthContext = createContext(null);
 
@@ -59,40 +58,16 @@ export const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    // Sign out from Supabase if it was used for signup
-    try { if (hasSupabaseConfig()) await supabase.auth.signOut(); } catch(e) {}
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
   };
 
-  if (loading || wakingServer) {
-    return (
-      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center p-4 gap-6">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-14 h-14 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          <div className="text-center">
-            <h2 className="text-xl font-bold text-white">
-              {wakingServer ? '⏳ Server is waking up...' : 'Loading workspace...'}
-            </h2>
-            {wakingServer && (
-              <p className="text-gray-400 mt-2 text-sm max-w-sm">
-                The Render free server went to sleep. It takes <strong className="text-white">30–60 seconds</strong> to boot. Please wait — do not refresh.
-              </p>
-            )}
-          </div>
-        </div>
-        {wakingServer && (
-          <div className="w-64 bg-white/5 rounded-full h-1.5 overflow-hidden">
-            <div className="h-full bg-primary rounded-full animate-pulse w-1/3" />
-          </div>
-        )}
-      </div>
-    );
-  }
+  // We no longer block rendering here so that the app shell can render immediately.
+  // We'll let ProtectedRoute handle the loading state using skeletons.
 
   return (
-    <AuthContext.Provider value={{ user, token, login, signup, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, wakingServer, login, signup, logout }}>
       {children}
     </AuthContext.Provider>
   );

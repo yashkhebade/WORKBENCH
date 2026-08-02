@@ -3,8 +3,8 @@ import api from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { useSocket } from '../contexts/SocketContext';
 import { Plus, Calendar as CalendarIcon, User, ChevronRight, ChevronDown, Filter, Search } from 'lucide-react';
-import { DndContext, DragOverlay, closestCorners, PointerSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { DndContext, DragOverlay, closestCorners, PointerSensor, KeyboardSensor, useSensor, useSensors, useDroppable } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy, sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useDebounce } from '../hooks/useDebounce';
 import { cn } from '../lib/utils';
@@ -29,7 +29,7 @@ const getPriorityClasses = (priority) => {
   return 'bg-sky-50 text-sky-600';
 };
 
-const SortableTask = memo(({ task, isOverlay, onOpen, dragJustHappenedRef }) => {
+const SortableTask = memo(({ task, isOverlay, onOpen }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: task.id, data: { type: 'Task', task } });
 
   const style = {
@@ -44,10 +44,6 @@ const SortableTask = memo(({ task, isOverlay, onOpen, dragJustHappenedRef }) => 
   };
 
   const handleClick = () => {
-    // dragJustHappenedRef is set true in onDragEnd for 150ms.
-    // Browsers also naturally suppress click after pointer moves >4px,
-    // so real drags will never open the modal.
-    if (dragJustHappenedRef?.current) return;
     onOpen(task);
   };
 
@@ -95,7 +91,7 @@ const SortableTask = memo(({ task, isOverlay, onOpen, dragJustHappenedRef }) => 
   );
 });
 
-const KanbanColumn = memo(({ col, colTasks, isCollapsed, onToggle, onAdd, onTaskOpen, dragJustHappenedRef }) => {
+const KanbanColumn = memo(({ col, colTasks, isCollapsed, onToggle, onAdd, onTaskOpen }) => {
   const { setNodeRef } = useDroppable({ id: col.id, data: { type: 'Column' } });
 
   return (
@@ -153,7 +149,7 @@ const KanbanColumn = memo(({ col, colTasks, isCollapsed, onToggle, onAdd, onTask
           <SortableContext id={col.id} items={colTasks.map(t => t.id)} strategy={verticalListSortingStrategy}>
             <div className="min-h-[100px] h-full flex flex-col">
               {colTasks.map(task => (
-                <SortableTask key={task.id} task={task} onOpen={onTaskOpen} dragJustHappenedRef={dragJustHappenedRef} />
+                <SortableTask key={task.id} task={task} onOpen={onTaskOpen} />
               ))}
               {colTasks.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-10 opacity-60 flex-1">
@@ -278,7 +274,6 @@ export default function TaskBoard() {
   const [activeDragTask, setActiveDragTask] = useState(null);
   const [selectedTask, setSelectedTask] = useState(null);
   const [creatingTaskStatus, setCreatingTaskStatus] = useState(null);
-  const dragJustHappenedRef = React.useRef(false);
 
   // Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -286,7 +281,10 @@ export default function TaskBoard() {
   const [filterPriority, setFilterPriority] = useState('All');
   const [filterAssignee, setFilterAssignee] = useState('All');
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   useEffect(() => {
     if (activeProjectId) fetchTasks(activeProjectId);
@@ -364,9 +362,6 @@ export default function TaskBoard() {
 
   const onDragEnd = useCallback(async (event) => {
     setActiveDragTask(null);
-    // Block accidental click-to-open-modal for 150ms after any drag ends
-    dragJustHappenedRef.current = true;
-    setTimeout(() => { dragJustHappenedRef.current = false; }, 150);
 
     const { active, over } = event;
     if (!over) return;
@@ -476,7 +471,6 @@ export default function TaskBoard() {
                 onToggle={toggleColumn}
                 onAdd={setCreatingTaskStatus}
                 onTaskOpen={setSelectedTask}
-                dragJustHappenedRef={dragJustHappenedRef}
               />
             );
           })}

@@ -1,4 +1,6 @@
 const User = require('../models/User');
+const Project = require('../models/Project');
+const Task = require('../models/Task');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { get } = require('../config/db');
@@ -21,6 +23,45 @@ exports.register = async (req, res) => {
         }
         await User.create({ name, email, password, role: 'Member' });
         const user = await User.findByEmail(email);
+
+        try {
+            const projectResult = await Project.create({
+                name: 'Welcome to Team Hub',
+                description: 'A sample project to help you get started with the workspace.',
+                status: 'Active',
+                workflow_state: 'In Progress'
+            });
+            const projectId = projectResult.id || projectResult.lastID;
+            
+            await Project.addMember(projectId, user.id, 'owner');
+
+            await Task.create({
+                project_id: projectId,
+                assignee_id: user.id,
+                title: 'Explore the Dashboard',
+                description: 'Check out the activity feed and project stats on your new dashboard.',
+                status: 'Done',
+                priority: 'Low'
+            });
+            await Task.create({
+                project_id: projectId,
+                assignee_id: user.id,
+                title: 'Try Drag & Drop',
+                description: 'Move this task to the "In Progress" or "Done" column.',
+                status: 'To Do',
+                priority: 'Medium'
+            });
+            await Task.create({
+                project_id: projectId,
+                assignee_id: null,
+                title: 'Upload a File',
+                description: 'Go to the Timeline and drop a PDF or image into the project.',
+                status: 'In Progress',
+                priority: 'High'
+            });
+        } catch (seedErr) {
+            console.error('Failed to seed welcome project:', seedErr);
+        }
         const token = jwt.sign(
             { id: user.id, role: user.role },
             process.env.JWT_SECRET,
