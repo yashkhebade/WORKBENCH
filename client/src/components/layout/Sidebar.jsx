@@ -5,47 +5,23 @@ import { cn } from '../../lib/utils';
 import api from '../../services/api';
 import { toast } from '../ui/toast';
 import InviteMemberModal from '../ui/InviteMemberModal';
+import CreateProjectModal from '../ui/CreateProjectModal';
+import { useProjects } from '../../contexts/ProjectContext';
 
 export default function Sidebar({ isOpen, toggleSidebar }) {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
 
-  const [projects, setProjects] = useState([]);
+  const { projects, fetchProjects } = useProjects();
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
-  const [newProject, setNewProject] = useState({ name: '', description: '' });
 
   // Collapsible section states
   const [quickAccessOpen, setQuickAccessOpen] = useState(true);
   const [projectsOpen, setProjectsOpen] = useState(true);
   const [teamOpen, setTeamOpen] = useState(true);
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
 
-  const fetchProjects = async () => {
-    try {
-      const res = await api.get('/projects');
-      setProjects(res.data);
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleCreateProject = async (e) => {
-    e.preventDefault();
-    if (!newProject.name.trim()) return;
-    try {
-      await api.post('/projects', newProject);
-      setShowProjectModal(false);
-      setNewProject({ name: '', description: '' });
-      fetchProjects();
-      toast.add({ title: 'Success', description: 'Project created', type: 'success' });
-    } catch (err) {
-      toast.add({ title: 'Error', description: err.response?.data?.error || 'Failed to create project', type: 'error' });
-    }
-  };
 
   if (!isOpen) return null;
 
@@ -149,45 +125,11 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
       </div>
 
       {/* New Project Modal */}
-      {showProjectModal && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-          <div className="bg-[#18181b] w-full max-w-md rounded-2xl shadow-2xl border border-white/10 flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex justify-between items-center p-4 border-b border-white/10">
-              <h3 className="font-semibold text-lg text-white">Create New Project</h3>
-              <button onClick={() => setShowProjectModal(false)} className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-white/5">
-                <X size={18} />
-              </button>
-            </div>
-            <form onSubmit={handleCreateProject} className="p-4 flex flex-col gap-4">
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-300">Project Name *</label>
-                <input 
-                  required 
-                  autoFocus
-                  value={newProject.name} 
-                  onChange={e => setNewProject({...newProject, name: e.target.value})} 
-                  className="w-full p-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none text-sm" 
-                  placeholder="e.g. NextGen PCB Redesign" 
-                />
-              </div>
-              <div className="flex flex-col gap-1.5">
-                <label className="text-xs font-medium text-gray-300">Description</label>
-                <textarea 
-                  value={newProject.description} 
-                  onChange={e => setNewProject({...newProject, description: e.target.value})} 
-                  className="w-full p-2.5 rounded-xl border border-white/10 bg-white/5 text-white placeholder-gray-500 focus:ring-2 focus:ring-primary outline-none text-sm" 
-                  placeholder="Goals, specs, architecture..." 
-                  rows={3} 
-                />
-              </div>
-              <div className="flex justify-end gap-3 mt-4">
-                <button type="button" onClick={() => setShowProjectModal(false)} className="px-4 py-2 rounded-xl text-sm font-medium hover:bg-white/5 text-gray-400 transition-colors">Cancel</button>
-                <button type="submit" className="px-4 py-2 rounded-xl text-sm font-medium bg-primary text-white hover:bg-primary/90 transition-colors shadow-sm">Create Project</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <CreateProjectModal 
+        isOpen={showProjectModal} 
+        onClose={() => setShowProjectModal(false)} 
+        onSuccess={() => fetchProjects()}
+      />
 
       {/* Invite Member Modal */}
       <InviteMemberModal isOpen={showMemberModal} onClose={() => setShowMemberModal(false)} />
