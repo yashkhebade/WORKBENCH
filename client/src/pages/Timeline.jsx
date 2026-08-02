@@ -5,6 +5,7 @@ import api from '../services/api';
 import { format, formatDistanceToNow, isToday, isYesterday } from 'date-fns';
 import CreateNoteModal from '../components/layout/CreateNoteModal';
 import { toast } from '../components/ui/toast';
+import { useProjects } from '../contexts/ProjectContext';
 
 const getFileIcon = (type) => {
   switch(type) {
@@ -29,8 +30,9 @@ export default function Timeline() {
   const [search, setSearch] = useState('');
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
-  const projectId = queryParams.get('project_id');
   const subjectId = queryParams.get('subject_id');
+  
+  const { activeProjectId: projectId } = useProjects();
   
   const [showNoteModal, setShowNoteModal] = useState(false);
   const [isDragging, setIsDragging] = useState(false);

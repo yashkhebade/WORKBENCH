@@ -12,7 +12,7 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
   const location = useLocation();
   const isActive = (path) => location.pathname === path;
 
-  const { projects, fetchProjects } = useProjects();
+  const { projects, fetchProjects, activeProjectId, setActiveProjectId } = useProjects();
   const [showProjectModal, setShowProjectModal] = useState(false);
   const [showMemberModal, setShowMemberModal] = useState(false);
 
@@ -86,12 +86,23 @@ export default function Sidebar({ isOpen, toggleSidebar }) {
 
           {projectsOpen && (
             <nav className="flex flex-col gap-1">
-              {projects.map(p => (
-                <Link key={p.id} to={`/timeline?project_id=${p.id}`} className="flex items-center gap-2.5 px-3 py-2 rounded-xl font-medium text-xs text-gray-400 hover:bg-white/5 hover:text-white transition-all duration-200 md:justify-center lg:justify-start">
-                  <FolderOpen size={16} strokeWidth={2} className="shrink-0 text-primary" />
-                  <span className="hidden lg:block truncate">{p.name}</span>
-                </Link>
-              ))}
+              {projects.map(p => {
+                const isProjectActive = String(p.id) === String(activeProjectId);
+                return (
+                  <Link 
+                    key={p.id} 
+                    to={`/timeline`} 
+                    onClick={() => setActiveProjectId(p.id)}
+                    className={cn(
+                      "flex items-center gap-2.5 px-3 py-2 rounded-xl font-medium text-xs transition-all duration-200 md:justify-center lg:justify-start",
+                      isProjectActive ? "bg-primary text-white shadow-sm" : "text-gray-400 hover:bg-white/5 hover:text-white"
+                    )}
+                  >
+                    <FolderOpen size={16} strokeWidth={2} className={cn("shrink-0", isProjectActive ? "text-white" : "text-primary")} />
+                    <span className="hidden lg:block truncate">{p.name}</span>
+                  </Link>
+                );
+              })}
 
               {projects.length === 0 && (
                 <div className="text-xs text-gray-500 px-3 py-2 hidden lg:block">No projects found.</div>
